@@ -14,3 +14,11 @@
 
 """napalm_panos package."""
 from panos import PANOSDriver
+import pkg_resources
+
+try:
+    __version__ = pkg_resources.get_distribution('napalm-panos').version
+except pkg_resources.DistributionNotFound:
+    __version__ = "Not installed"
+
+__all__ = ['PANOSDriver']
