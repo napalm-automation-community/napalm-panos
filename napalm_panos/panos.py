@@ -431,7 +431,7 @@ class PANOSDriver(NetworkDriver):
             routes_table_xml = xmltodict.parse(self.device.xml_root())
             routes_table_json = json.dumps(routes_table_xml['response']['result']['entry'])
             routes_table = json.loads(routes_table_json)
-        except AttributeError:
+        except (AttributeError, KeyError):
             routes_table = []
 
         if isinstance(routes_table, dict):
