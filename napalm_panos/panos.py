@@ -30,7 +30,10 @@ from napalm_base.utils.string_parsers import convert_uptime_string_seconds
 from napalm_base.exceptions import ConnectionException, ReplaceConfigException,\
                                    MergeConfigException
 
-from napalm_base.base import NetworkDriver
+try:
+    from napalm_base import NetworkDriver
+except ImportError:
+    from napalm_base.base import NetworkDriver
 
 from napalm_base.utils import py23_compat
 
