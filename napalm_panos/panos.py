@@ -31,7 +31,7 @@ from napalm_base.exceptions import ConnectionException, ReplaceConfigException,\
                                    MergeConfigException
 
 try:
-    from napalm_base import NetworkDriver
+    from napalm.base import NetworkDriver
 except ImportError:
     from napalm_base.base import NetworkDriver
 
