@@ -36,6 +36,18 @@
       <id>3</id>
       <addr/>
     </entry>
+    <entry>
+      <name>loopback.100</name>
+      <zone>foobar</zone>
+      <fwd>vr:default</fwd>
+      <vsys>1</vsys>
+      <dyn-addr/>
+      <addr6/>
+      <tag>0</tag>
+      <ip>155.1.1.1/32</ip>
+      <id>256</id>
+      <addr/>
+    </entry>
   </ifnet>
   <hw>
     <entry>
