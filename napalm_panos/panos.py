@@ -592,7 +592,7 @@ class PANOSDriver(NetworkDriver):
 
             if secondary_v4_ip is not None:
                 members = secondary_v4_ip['member']
-                if isinstance(members, str):
+                if not isinstance(members, list):
                     # If only 1 secondary IP is present, xmltodict converts field to a string, else
                     # it converts it to a list of strings.
                     members = [members]
@@ -602,14 +602,14 @@ class PANOSDriver(NetworkDriver):
 
             if v6_ip is not None:
                 members = v6_ip['member']
-                if isinstance(members, str):
-                    # Same "1 vs many -> string vs list" comment.
+                if not isinstance(members, list):
+                    # Same "1 vs many -> string vs list of strings" comment.
                     members = [members]
                 for address in members:
                     address, pref = address.split('/')
                     _ip_info[intf].setdefault('ipv6', {})[address] = {'prefix_length': int(pref)}
 
-            # Reset dict if no addresses were found.
+            # Reset dictionary if no addresses were found.
             if _ip_info == {intf: {}}:
                 _ip_info = {}
 
@@ -629,7 +629,7 @@ class PANOSDriver(NetworkDriver):
             return ip_interfaces
 
         if isinstance(interface_info, dict):
-            # Same "1 vs many -> string vs list" comment.
+            # Same "1 vs many -> dict vs list of dicts" comment.
             interface_info = [interface_info]
 
         for interface_dict in interface_info:
