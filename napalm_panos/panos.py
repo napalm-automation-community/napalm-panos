@@ -534,3 +534,65 @@ class PANOSDriver(NetworkDriver):
             interface_dict[name] = interface
 
         return interface_dict
+
+    def get_interfaces_ip(self):
+        def extract_ip_info(parsed_intf_dict):
+            intf = parsed_intf_dict['name']
+            _ip_info = {intf: {}}
+
+            v4_ip = parsed_intf_dict.get('ip')
+            secondary_v4_ip = parsed_intf_dict.get('addr')
+            v6_ip = parsed_intf_dict.get('addr6')
+
+            if v4_ip != 'N/A':
+                address, pref = v4_ip.split('/')
+                _ip_info[intf].setdefault('ipv4', {})[address] = {'prefix_length': int(pref)}
+
+            if secondary_v4_ip:
+                members = secondary_v4_ip['member']
+                if isinstance(members, str):
+                    # If only 1 secondary IP is present, xmltodict converts field to a string, else
+                    # it converts it to a list of strings.
+                    members = [members]
+                for address in members:
+                    address, pref = address.split('/')
+                    _ip_info[intf].setdefault('ipv4', {})[address] = {'prefix_length': int(pref)}
+
+            if v6_ip is not None:
+                members = v6_ip['member']
+                if isinstance(members, str):
+                    # Same "1 vs many -> string vs list" comment.
+                    members = [members]
+                for address in members:
+                    address, pref = address.split('/')
+                    _ip_info[intf].setdefault('ipv6', {})[address] = {'prefix_length': int(pref)}
+
+            # Reset dict if no addresses were found.
+            if _ip_info == {intf: {}}:
+                _ip_info = {}
+
+            return _ip_info
+
+        ip_interfaces = {}
+        cmd = "<show><interface>all</interface></show>"
+
+        try:
+            self.device.op(cmd=cmd)
+            interface_info_xml = xmltodict.parse(self.device.xml_root())
+            interface_info_json = json.dumps(
+                interface_info_xml['response']['result']['ifnet']['entry']
+            )
+            interface_info = json.loads(interface_info_json)
+        except KeyError:
+            return ip_interfaces
+
+        if isinstance(interface_info, dict):
+            # Same "1 vs many -> string vs list" comment.
+            interface_info = [interface_info]
+
+        for interface_dict in interface_info:
+            ip_info = extract_ip_info(interface_dict)
+            if ip_info:
+                ip_interfaces = {**ip_interfaces, **ip_info}
+
+        return ip_interfaces
