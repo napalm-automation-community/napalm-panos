@@ -524,16 +524,23 @@ class PANOSDriver(NetworkDriver):
                 interface_info_xml = xmltodict.parse(self.device.xml_root())
                 interface_info_json = json.dumps(interface_info_xml['response']['result']['hw'])
                 interface_info = json.loads(interface_info_json)
-            except KeyError:
-                # loopback sub-ifs don't return a 'hw' key
-                interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
-                continue
+            except KeyError as err:
+                if 'loopback.' in interface and 'hw' in str(err):
+                    # loopback sub-ifs don't return a 'hw' key
+                    interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
+                    continue
+                raise
 
-            state = interface_info.get('state') == 'up'
-            state_enabled = interface_info.get('state_c') != 'down'  # up -> 'up' or 'auto'
+            interface['is_up'] = interface_info.get('state') == 'up'
 
-            interface['is_up'] = state
-            interface['is_enabled'] = state_enabled
+            conf_state = interface_info.get('state_c')
+            if conf_state == 'down':
+                interface['is_enabled'] = False
+            elif conf_state in ('up', 'auto'):
+                interface['is_enabled'] = True
+            else:
+                msg = 'Unknown configured state {} for interface {}'.format(conf_state, name)
+                raise RuntimeError(msg)
 
             interface['last_flapped'] = -1.0
             interface['speed'] = interface_info.get('speed')
