@@ -356,8 +356,8 @@ class PANOSDriver(NetworkDriver):
 
         interface_set = set()
 
-        for _, entry in interfaces.items():
-            for _, entry_contents in entry.items():
+        for entry in interfaces.values():
+            for entry_contents in entry.values():
                 if isinstance(entry_contents, dict):
                     # If only 1 interface is listed, xmltodict returns a dictionary, otherwise
                     # it returns a list of dictionaries.
