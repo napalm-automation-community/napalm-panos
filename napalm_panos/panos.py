@@ -618,15 +618,12 @@ class PANOSDriver(NetworkDriver):
         ip_interfaces = {}
         cmd = "<show><interface>all</interface></show>"
 
-        try:
-            self.device.op(cmd=cmd)
-            interface_info_xml = xmltodict.parse(self.device.xml_root())
-            interface_info_json = json.dumps(
-                interface_info_xml['response']['result']['ifnet']['entry']
-            )
-            interface_info = json.loads(interface_info_json)
-        except KeyError:
-            return ip_interfaces
+        self.device.op(cmd=cmd)
+        interface_info_xml = xmltodict.parse(self.device.xml_root())
+        interface_info_json = json.dumps(
+            interface_info_xml['response']['result']['ifnet']['entry']
+        )
+        interface_info = json.loads(interface_info_json)
 
         if isinstance(interface_info, dict):
             # Same "1 vs many -> dict vs list of dicts" comment.
