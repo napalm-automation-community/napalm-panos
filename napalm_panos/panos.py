@@ -28,16 +28,16 @@ import time
 # local modules
 try:
     from napalm.base.utils.string_parsers import convert_uptime_string_seconds
-    from napalm.base.exceptions import ConnectionException,\
-                                       ReplaceConfigException,\
-                                       MergeConfigException
+    from napalm.base.exceptions import ConnectionException
+    from napalm.base.exceptions import ReplaceConfigException
+    from napalm.base.exceptions import MergeConfigException
     from napalm.base import NetworkDriver
     from napalm.base.utils import py23_compat
 except ImportError:
     from napalm_base.utils.string_parsers import convert_uptime_string_seconds
-    from napalm_base.exceptions import ConnectionException,\
-                                       ReplaceConfigException,\
-                                       MergeConfigException
+    from napalm_base.exceptions import ConnectionException
+    from napalm_base.exceptions import ReplaceConfigException
+    from napalm_base.exceptions import MergeConfigException
     from napalm_base.base import NetworkDriver
     from napalm_base.utils import py23_compat
 
