@@ -16,7 +16,7 @@
 import unittest
 
 from napalm_panos import panos
-from napalm_base.test.base import TestConfigNetworkDriver
+from napalm.base.test.base import TestConfigNetworkDriver
 
 
 class TestConfigDriver(unittest.TestCase, TestConfigNetworkDriver):
