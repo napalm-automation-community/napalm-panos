@@ -26,13 +26,21 @@ from datetime import datetime
 import time
 
 # local modules
-from napalm_base.utils.string_parsers import convert_uptime_string_seconds
-from napalm_base.exceptions import ConnectionException, ReplaceConfigException,\
-                                   MergeConfigException
+try:
+    from napalm.base.utils.string_parsers import convert_uptime_string_seconds
+    from napalm.base.exceptions import ConnectionException
+    from napalm.base.exceptions import ReplaceConfigException
+    from napalm.base.exceptions import MergeConfigException
+    from napalm.base import NetworkDriver
+    from napalm.base.utils import py23_compat
+except ImportError:
+    from napalm_base.utils.string_parsers import convert_uptime_string_seconds
+    from napalm_base.exceptions import ConnectionException
+    from napalm_base.exceptions import ReplaceConfigException
+    from napalm_base.exceptions import MergeConfigException
+    from napalm_base.base import NetworkDriver
+    from napalm_base.utils import py23_compat
 
-from napalm_base.base import NetworkDriver
-
-from napalm_base.utils import py23_compat
 
 from netmiko import ConnectHandler
 from netmiko import __version__ as netmiko_version
@@ -372,9 +380,13 @@ class PANOSDriver(NetworkDriver):
 
         for element in interfaces:
             for entry in interfaces[element]:
-                for intf in interfaces[element][entry]:
-                    if intf['name'] not in facts['interface_list']:
-                        facts['interface_list'].append(intf['name'])
+                if isinstance(interfaces[element][entry], list):
+                    for intf in interfaces[element][entry]:
+                        if intf['name'] not in facts['interface_list']:
+                            facts['interface_list'].append(intf['name'])
+                else:
+                    if interfaces[element][entry]['name'] not in facts['interface_list']:
+                        facts['interface_list'].append(interfaces[element][entry]['name'])
         facts['interface_list'].sort()
         return facts
 
