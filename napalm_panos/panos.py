@@ -352,13 +352,10 @@ class PANOSDriver(NetworkDriver):
                 ReplaceConfigException("Error while loading backup config")
 
     def _extract_interface_list(self):
-        try:
-            self.device.op(cmd='<show><interface>all</interface></show>')
-            interfaces_xml = xmltodict.parse(self.device.xml_root())
-            interfaces_json = json.dumps(interfaces_xml['response']['result'])
-            interfaces = json.loads(interfaces_json)
-        except AttributeError:
-            interfaces = {}
+        self.device.op(cmd='<show><interface>all</interface></show>')
+        interfaces_xml = xmltodict.parse(self.device.xml_root())
+        interfaces_json = json.dumps(interfaces_xml['response']['result'])
+        interfaces = json.loads(interfaces_json)
 
         interface_set = set()
 
