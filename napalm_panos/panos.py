@@ -33,6 +33,7 @@ try:
     from napalm.base.exceptions import MergeConfigException
     from napalm.base import NetworkDriver
     from napalm.base.utils import py23_compat
+    from napalm.base.helpers import mac as standardize_mac
 except ImportError:
     from napalm_base.utils.string_parsers import convert_uptime_string_seconds
     from napalm_base.exceptions import ConnectionException
@@ -40,6 +41,7 @@ except ImportError:
     from napalm_base.exceptions import MergeConfigException
     from napalm_base.base import NetworkDriver
     from napalm_base.utils import py23_compat
+    from napalm_base.helpers import mac as standardize_mac
 
 
 from netmiko import ConnectHandler
@@ -349,6 +351,25 @@ class PANOSDriver(NetworkDriver):
             except:    # noqa
                 ReplaceConfigException("Error while loading backup config")
 
+    def _extract_interface_list(self):
+        self.device.op(cmd='<show><interface>all</interface></show>')
+        interfaces_xml = xmltodict.parse(self.device.xml_root())
+        interfaces_json = json.dumps(interfaces_xml['response']['result'])
+        interfaces = json.loads(interfaces_json)
+
+        interface_set = set()
+
+        for entry in interfaces.values():
+            for entry_contents in entry.values():
+                if isinstance(entry_contents, dict):
+                    # If only 1 interface is listed, xmltodict returns a dictionary, otherwise
+                    # it returns a list of dictionaries.
+                    entry_contents = [entry_contents]
+                for intf in entry_contents:
+                    interface_set.add(intf['name'])
+
+        return list(interface_set)
+
     def get_facts(self):
         facts = {}
 
@@ -360,14 +381,6 @@ class PANOSDriver(NetworkDriver):
         except AttributeError:
             system_info = {}
 
-        try:
-            self.device.op(cmd='<show><interface>all</interface></show>')
-            interfaces_xml = xmltodict.parse(self.device.xml_root())
-            interfaces_json = json.dumps(interfaces_xml['response']['result'])
-            interfaces = json.loads(interfaces_json)
-        except AttributeError:
-            interfaces = {}
-
         if system_info:
             facts['hostname'] = system_info['hostname']
             facts['vendor'] = py23_compat.text_type('Palo Alto Networks')
@@ -376,18 +389,10 @@ class PANOSDriver(NetworkDriver):
             facts['serial_number'] = system_info['serial']
             facts['model'] = system_info['model']
             facts['fqdn'] = py23_compat.text_type('N/A')
-            facts['interface_list'] = []
+            facts['interface_list'] = self._extract_interface_list()
 
-        for element in interfaces:
-            for entry in interfaces[element]:
-                if isinstance(interfaces[element][entry], list):
-                    for intf in interfaces[element][entry]:
-                        if intf['name'] not in facts['interface_list']:
-                            facts['interface_list'].append(intf['name'])
-                else:
-                    if interfaces[element][entry]['name'] not in facts['interface_list']:
-                        facts['interface_list'].append(interfaces[element][entry]['name'])
-        facts['interface_list'].sort()
+            facts['interface_list'].sort()
+
         return facts
 
     def get_lldp_neighbors(self):
@@ -502,8 +507,16 @@ class PANOSDriver(NetworkDriver):
         return routes
 
     def get_interfaces(self):
+        LOOPBACK_SUBIF_DEFAULTS = {
+            'is_up': True,
+            'is_enabled': True,
+            'speed': 0,
+            'last_flapped': -1.0,
+            'mac_address': '',
+            'description': 'N/A'
+        }
         interface_dict = {}
-        interface_list = self.get_facts()['interface_list']
+        interface_list = self._extract_interface_list()
 
         for intf in interface_list:
             interface = {}
@@ -514,29 +527,34 @@ class PANOSDriver(NetworkDriver):
                 interface_info_xml = xmltodict.parse(self.device.xml_root())
                 interface_info_json = json.dumps(interface_info_xml['response']['result']['hw'])
                 interface_info = json.loads(interface_info_json)
-            except AttributeError:
-                interface_info = {}
+            except KeyError as err:
+                if 'loopback.' in intf and 'hw' in str(err):
+                    # loopback sub-ifs don't return a 'hw' key
+                    interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
+                    continue
+                raise
 
-            name = interface_info.get('name')
-            state = interface_info.get('state')
+            interface['is_up'] = interface_info.get('state') == 'up'
 
-            if state == 'up':
-                interface['is_up'] = True
+            conf_state = interface_info.get('state_c')
+            if conf_state == 'down':
+                interface['is_enabled'] = False
+            elif conf_state in ('up', 'auto'):
                 interface['is_enabled'] = True
             else:
-                interface['is_up'] = False
-                interface['is_enabled'] = False
+                msg = 'Unknown configured state {} for interface {}'.format(conf_state, intf)
+                raise RuntimeError(msg)
 
             interface['last_flapped'] = -1.0
             interface['speed'] = interface_info.get('speed')
-            # Quick fix for loopback interfaces
-            if interface['speed'] == '[n/a]':
+            # Loopback and down interfaces
+            if interface['speed'] in ('[n/a]', 'unknown'):
                 interface['speed'] = 0
             else:
                 interface['speed'] = int(interface['speed'])
-            interface['mac_address'] = interface_info.get('mac')
+            interface['mac_address'] = standardize_mac(interface_info.get('mac'))
             interface['description'] = py23_compat.text_type('N/A')
-            interface_dict[name] = interface
+            interface_dict[intf] = interface
 
         return interface_dict
 
