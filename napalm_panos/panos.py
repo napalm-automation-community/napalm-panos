@@ -33,6 +33,7 @@ try:
     from napalm.base.exceptions import MergeConfigException
     from napalm.base import NetworkDriver
     from napalm.base.utils import py23_compat
+    from napalm.base.helpers import mac as standardize_mac
 except ImportError:
     from napalm_base.utils.string_parsers import convert_uptime_string_seconds
     from napalm_base.exceptions import ConnectionException
@@ -40,10 +41,9 @@ except ImportError:
     from napalm_base.exceptions import MergeConfigException
     from napalm_base.base import NetworkDriver
     from napalm_base.utils import py23_compat
+    from napalm_base.helpers import mac as standardize_mac
 
 
-from napalm_base.utils import py23_compat
-from napalm_base.helpers import mac as standardize_mac
 from netmiko import ConnectHandler
 from netmiko import __version__ as netmiko_version
 
