@@ -3,9 +3,9 @@
     <name>ethernet1/3</name>
     <duplex>full</duplex>
     <type>0</type>
-    <state_c>auto</state_c>
+    <state_c>down</state_c>
     <mac>ba:db:ee:fb:ad:12</mac>
-    <state>up</state>
+    <state>down</state>
     <duplex_c>auto</duplex_c>
     <mode>none</mode>
     <speed_c>auto</speed_c>

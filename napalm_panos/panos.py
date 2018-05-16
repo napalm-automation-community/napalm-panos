@@ -33,6 +33,7 @@ try:
     from napalm.base.exceptions import MergeConfigException
     from napalm.base import NetworkDriver
     from napalm.base.utils import py23_compat
+    from napalm.base.helpers import mac as standardize_mac
 except ImportError:
     from napalm_base.utils.string_parsers import convert_uptime_string_seconds
     from napalm_base.exceptions import ConnectionException
@@ -40,6 +41,7 @@ except ImportError:
     from napalm_base.exceptions import MergeConfigException
     from napalm_base.base import NetworkDriver
     from napalm_base.utils import py23_compat
+    from napalm_base.helpers import mac as standardize_mac
 
 
 from netmiko import ConnectHandler
@@ -349,6 +351,25 @@ class PANOSDriver(NetworkDriver):
             except:    # noqa
                 ReplaceConfigException("Error while loading backup config")
 
+    def _extract_interface_list(self):
+        self.device.op(cmd='<show><interface>all</interface></show>')
+        interfaces_xml = xmltodict.parse(self.device.xml_root())
+        interfaces_json = json.dumps(interfaces_xml['response']['result'])
+        interfaces = json.loads(interfaces_json)
+
+        interface_set = set()
+
+        for entry in interfaces.values():
+            for entry_contents in entry.values():
+                if isinstance(entry_contents, dict):
+                    # If only 1 interface is listed, xmltodict returns a dictionary, otherwise
+                    # it returns a list of dictionaries.
+                    entry_contents = [entry_contents]
+                for intf in entry_contents:
+                    interface_set.add(intf['name'])
+
+        return list(interface_set)
+
     def get_facts(self):
         facts = {}
 
@@ -360,14 +381,6 @@ class PANOSDriver(NetworkDriver):
         except AttributeError:
             system_info = {}
 
-        try:
-            self.device.op(cmd='<show><interface>all</interface></show>')
-            interfaces_xml = xmltodict.parse(self.device.xml_root())
-            interfaces_json = json.dumps(interfaces_xml['response']['result'])
-            interfaces = json.loads(interfaces_json)
-        except AttributeError:
-            interfaces = {}
-
         if system_info:
             facts['hostname'] = system_info['hostname']
             facts['vendor'] = py23_compat.text_type('Palo Alto Networks')
@@ -376,18 +389,10 @@ class PANOSDriver(NetworkDriver):
             facts['serial_number'] = system_info['serial']
             facts['model'] = system_info['model']
             facts['fqdn'] = py23_compat.text_type('N/A')
-            facts['interface_list'] = []
+            facts['interface_list'] = self._extract_interface_list()
 
-        for element in interfaces:
-            for entry in interfaces[element]:
-                if isinstance(interfaces[element][entry], list):
-                    for intf in interfaces[element][entry]:
-                        if intf['name'] not in facts['interface_list']:
-                            facts['interface_list'].append(intf['name'])
-                else:
-                    if interfaces[element][entry]['name'] not in facts['interface_list']:
-                        facts['interface_list'].append(interfaces[element][entry]['name'])
-        facts['interface_list'].sort()
+            facts['interface_list'].sort()
+
         return facts
 
     def get_lldp_neighbors(self):
@@ -502,8 +507,16 @@ class PANOSDriver(NetworkDriver):
         return routes
 
     def get_interfaces(self):
+        LOOPBACK_SUBIF_DEFAULTS = {
+            'is_up': True,
+            'is_enabled': True,
+            'speed': 0,
+            'last_flapped': -1.0,
+            'mac_address': '',
+            'description': 'N/A'
+        }
         interface_dict = {}
-        interface_list = self.get_facts()['interface_list']
+        interface_list = self._extract_interface_list()
 
         for intf in interface_list:
             interface = {}
@@ -514,28 +527,134 @@ class PANOSDriver(NetworkDriver):
                 interface_info_xml = xmltodict.parse(self.device.xml_root())
                 interface_info_json = json.dumps(interface_info_xml['response']['result']['hw'])
                 interface_info = json.loads(interface_info_json)
-            except AttributeError:
-                interface_info = {}
+            except KeyError as err:
+                if 'loopback.' in intf and 'hw' in str(err):
+                    # loopback sub-ifs don't return a 'hw' key
+                    interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
+                    continue
+                raise
 
-            name = interface_info.get('name')
-            state = interface_info.get('state')
+            interface['is_up'] = interface_info.get('state') == 'up'
 
-            if state == 'up':
-                interface['is_up'] = True
+            conf_state = interface_info.get('state_c')
+            if conf_state == 'down':
+                interface['is_enabled'] = False
+            elif conf_state in ('up', 'auto'):
                 interface['is_enabled'] = True
             else:
-                interface['is_up'] = False
-                interface['is_enabled'] = False
+                msg = 'Unknown configured state {} for interface {}'.format(conf_state, intf)
+                raise RuntimeError(msg)
 
             interface['last_flapped'] = -1.0
             interface['speed'] = interface_info.get('speed')
-            # Quick fix for loopback interfaces
-            if interface['speed'] == '[n/a]':
+            # Loopback and down interfaces
+            if interface['speed'] in ('[n/a]', 'unknown'):
                 interface['speed'] = 0
             else:
                 interface['speed'] = int(interface['speed'])
-            interface['mac_address'] = interface_info.get('mac')
+            interface['mac_address'] = standardize_mac(interface_info.get('mac'))
             interface['description'] = py23_compat.text_type('N/A')
-            interface_dict[name] = interface
+            interface_dict[intf] = interface
 
         return interface_dict
+
+    def get_interfaces_ip(self):
+        '''Return IP interface data.'''
+
+        def extract_ip_info(parsed_intf_dict):
+            '''
+            IPv4:
+              - Primary IP is in the '<ip>' tag. If no v4 is configured the return value is 'N/A'.
+              - Secondary IP's are in '<addr>'. If no secondaries, this field is not returned by
+                the xmltodict.parse() method.
+
+            IPv6:
+              - All addresses are returned in '<addr6>'. If no v6 configured, this is not returned
+                either by xmltodict.parse().
+
+            Example of XML response for an intf with multiple IPv4 and IPv6 addresses:
+
+            <response status="success">
+              <result>
+                <ifnet>
+                  <entry>
+                    <name>ethernet1/5</name>
+                    <zone/>
+                    <fwd>N/A</fwd>
+                    <vsys>1</vsys>
+                    <dyn-addr/>
+                    <addr6>
+                      <member>fe80::d61d:71ff:fed8:fe14/64</member>
+                      <member>2001::1234/120</member>
+                    </addr6>
+                    <tag>0</tag>
+                    <ip>169.254.0.1/30</ip>
+                    <id>20</id>
+                    <addr>
+                      <member>1.1.1.1/28</member>
+                    </addr>
+                  </entry>
+                  {...}
+                </ifnet>
+                <hw>
+                  {...}
+                </hw>
+              </result>
+            </response>
+            '''
+            intf = parsed_intf_dict['name']
+            _ip_info = {intf: {}}
+
+            v4_ip = parsed_intf_dict.get('ip')
+            secondary_v4_ip = parsed_intf_dict.get('addr')
+            v6_ip = parsed_intf_dict.get('addr6')
+
+            if v4_ip != 'N/A':
+                address, pref = v4_ip.split('/')
+                _ip_info[intf].setdefault('ipv4', {})[address] = {'prefix_length': int(pref)}
+
+            if secondary_v4_ip is not None:
+                members = secondary_v4_ip['member']
+                if not isinstance(members, list):
+                    # If only 1 secondary IP is present, xmltodict converts field to a string, else
+                    # it converts it to a list of strings.
+                    members = [members]
+                for address in members:
+                    address, pref = address.split('/')
+                    _ip_info[intf].setdefault('ipv4', {})[address] = {'prefix_length': int(pref)}
+
+            if v6_ip is not None:
+                members = v6_ip['member']
+                if not isinstance(members, list):
+                    # Same "1 vs many -> string vs list of strings" comment.
+                    members = [members]
+                for address in members:
+                    address, pref = address.split('/')
+                    _ip_info[intf].setdefault('ipv6', {})[address] = {'prefix_length': int(pref)}
+
+            # Reset dictionary if no addresses were found.
+            if _ip_info == {intf: {}}:
+                _ip_info = {}
+
+            return _ip_info
+
+        ip_interfaces = {}
+        cmd = "<show><interface>all</interface></show>"
+
+        self.device.op(cmd=cmd)
+        interface_info_xml = xmltodict.parse(self.device.xml_root())
+        interface_info_json = json.dumps(
+            interface_info_xml['response']['result']['ifnet']['entry']
+        )
+        interface_info = json.loads(interface_info_json)
+
+        if isinstance(interface_info, dict):
+            # Same "1 vs many -> dict vs list of dicts" comment.
+            interface_info = [interface_info]
+
+        for interface_dict in interface_info:
+            ip_info = extract_ip_info(interface_dict)
+            if ip_info:
+                ip_interfaces.update(ip_info)
+
+        return ip_interfaces

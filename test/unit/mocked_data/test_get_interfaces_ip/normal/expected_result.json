@@ -1,0 +1,44 @@
+{
+    "ethernet1/2": {
+        "ipv4": {
+            "2.2.2.2": {
+                "prefix_length": 24
+            },
+            "157.191.6.156": {
+                "prefix_length": 24
+            }
+        }
+    },
+    "ethernet1/3.301": {
+        "ipv4": {
+            "172.24.255.1": {
+                "prefix_length": 26
+            }
+        }
+    },
+    "ethernet1/4": {
+        "ipv4": {
+            "1.1.1.1": {
+                "prefix_length": 28
+            },
+            "169.254.0.1": {
+                "prefix_length": 30
+            }
+        },
+        "ipv6": {
+            "fe80::d61d:71ff:fed8:fe14": {
+                "prefix_length": 64
+            },
+            "2001::1234": {
+                "prefix_length": 120
+            }
+        }
+    },
+    "ethernet1/1.202": {
+        "ipv4": {
+            "157.191.8.17": {
+                "prefix_length": 28
+            }
+        }
+    }
+}
