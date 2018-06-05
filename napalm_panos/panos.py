@@ -24,6 +24,7 @@ import requests_toolbelt
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from datetime import datetime
 import time
+import re
 
 # local modules
 try:
@@ -515,6 +516,7 @@ class PANOSDriver(NetworkDriver):
             'mac_address': '',
             'description': 'N/A'
         }
+        interface_pattern = re.compile(r'(ethernet\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)')
         interface_dict = {}
         interface_list = self._extract_interface_list()
 
@@ -528,7 +530,7 @@ class PANOSDriver(NetworkDriver):
                 interface_info_json = json.dumps(interface_info_xml['response']['result']['hw'])
                 interface_info = json.loads(interface_info_json)
             except KeyError as err:
-                if 'loopback.' in intf and 'hw' in str(err):
+                if interface_pattern.search(intf) and 'hw' in str(err):
                     # loopback sub-ifs don't return a 'hw' key
                     interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
                     continue
