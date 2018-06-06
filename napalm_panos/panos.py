@@ -516,7 +516,7 @@ class PANOSDriver(NetworkDriver):
             'mac_address': '',
             'description': 'N/A'
         }
-        interface_pattern = re.compile(r'(ethernet\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)')
+        interface_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)")
         interface_dict = {}
         interface_list = self._extract_interface_list()
 
