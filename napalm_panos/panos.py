@@ -508,7 +508,7 @@ class PANOSDriver(NetworkDriver):
         return routes
 
     def get_interfaces(self):
-        LOOPBACK_SUBIF_DEFAULTS = {
+        SUBIF_DEFAULTS = {
             'is_up': True,
             'is_enabled': True,
             'speed': 0,
@@ -516,7 +516,7 @@ class PANOSDriver(NetworkDriver):
             'mac_address': '',
             'description': 'N/A'
         }
-        interface_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)")
+        subintf_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)")
         interface_dict = {}
         interface_list = self._extract_interface_list()
 
@@ -530,9 +530,9 @@ class PANOSDriver(NetworkDriver):
                 interface_info_json = json.dumps(interface_info_xml['response']['result']['hw'])
                 interface_info = json.loads(interface_info_json)
             except KeyError as err:
-                if interface_pattern.search(intf) and 'hw' in str(err):
-                    # loopback sub-ifs don't return a 'hw' key
-                    interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
+                if subintf_pattern.search(intf) and 'hw' in str(err):
+                    # physical/ae/tunnel/loopback sub-ifs don't return a 'hw' key
+                    interface_dict[intf] = SUBIF_DEFAULTS
                     continue
                 raise
 
