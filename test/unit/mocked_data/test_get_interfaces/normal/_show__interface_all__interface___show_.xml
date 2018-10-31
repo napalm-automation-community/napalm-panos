@@ -37,6 +37,29 @@
       <addr/>
     </entry>
     <entry>
+        <name>vlan</name>
+        <zone/>
+        <fwd>N/A</fwd>
+        <vsys>1</vsys>
+        <dyn-addr/>
+        <addr6/>
+        <tag>0</tag>
+        <ip>N/A</ip>
+        <id>1</id>
+        <addr/>
+    </entry>
+    <entry>
+        <name>vlan.200</name>
+        <zone>FOO</zone>
+        <fwd>vr:default</fwd>
+        <vsys>1</vsys>
+        <dyn-addr/>
+        <addr6/>
+        <tag>0</tag>
+        <ip>172.16.1.1/29</ip>
+        <id>265</id>
+        <addr/></entry>
+    <entry>
       <name>loopback</name>
       <zone/>
       <fwd>N/A</fwd>
@@ -151,6 +174,17 @@
       <mode>(unknown)</mode>
       <speed>[n/a]</speed>
       <id>4</id>
+    </entry>
+    <entry>
+        <name>vlan</name>
+        <duplex>[n/a]</duplex>
+        <type>3</type>
+        <state>up</state>
+        <st>[n/a]/[n/a]/up</st>
+        <mac>00:11:22:33:44:55</mac>
+        <mode>(unknown)</mode>
+        <speed>[n/a]</speed>
+        <id>1</id>
     </entry>
   </hw>
 </result></response>

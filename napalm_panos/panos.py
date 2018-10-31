@@ -516,7 +516,8 @@ class PANOSDriver(NetworkDriver):
             'mac_address': '',
             'description': 'N/A'
         }
-        subintf_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)")
+        interface_pattern = re.compile(
+            r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)|(vlan\.)")
         interface_dict = {}
         interface_list = self._extract_interface_list()
 
@@ -530,7 +531,7 @@ class PANOSDriver(NetworkDriver):
                 interface_info_json = json.dumps(interface_info_xml['response']['result']['hw'])
                 interface_info = json.loads(interface_info_json)
             except KeyError as err:
-                if subintf_pattern.search(intf) and 'hw' in str(err):
+                if interface_pattern.search(intf) and 'hw' in str(err):
                     # physical/ae/tunnel/loopback sub-ifs don't return a 'hw' key
                     interface_dict[intf] = SUBIF_DEFAULTS
                     continue
