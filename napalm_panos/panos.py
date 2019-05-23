@@ -513,10 +513,26 @@ class PANOSDriver(NetworkDriver):
             'speed': 0,
             'last_flapped': -1.0,
             'mac_address': '',
-            'description': 'N/A'
+            'description': ''
         }
         interface_dict = {}
+        interface_descr = {}
         interface_list = self._extract_interface_list()
+
+        self.device.get(xpath="/config/devices/entry[@name='localhost.localdomain']/network/interface")
+        for eth_int in self.device.element_result.findall(".//ethernet/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ''
+            interface_descr[name] = description.strip()
+        for eth_int in self.device.element_result.findall(".//vlan/units/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ''
+            interface_descr[name] = description.strip()
+        for eth_int in self.device.element_result.findall(".//tunnel/units/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ''
+            interface_descr[name] = description.strip()
+        interface_descr["loopback"] = self.device.element_result.findtext(".//loopback/comment") or ''
 
         for intf in interface_list:
             interface = {}
@@ -528,7 +544,7 @@ class PANOSDriver(NetworkDriver):
                 interface_info_json = json.dumps(interface_info_xml['response']['result']['hw'])
                 interface_info = json.loads(interface_info_json)
             except KeyError as err:
-                if 'loopback.' in intf and 'hw' in str(err):
+                if intf.startswith(("loopback.", "tunnel.")) and 'hw' in str(err):
                     # loopback sub-ifs don't return a 'hw' key
                     interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
                     continue
@@ -553,7 +569,7 @@ class PANOSDriver(NetworkDriver):
             else:
                 interface['speed'] = int(interface['speed'])
             interface['mac_address'] = standardize_mac(interface_info.get('mac'))
-            interface['description'] = py23_compat.text_type('N/A')
+            interface['description'] = interface_descr.get(intf, "")
             interface_dict[intf] = interface
 
         return interface_dict
