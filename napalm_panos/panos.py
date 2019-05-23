@@ -21,6 +21,7 @@ import os.path
 import xml.etree
 import requests
 import requests_toolbelt
+from pkg_resources import parse_version
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from datetime import datetime
 import time
@@ -77,12 +78,9 @@ class PANOSDriver(NetworkDriver):
             'ssh_config_file': None,
         }
 
-        fields = netmiko_version.split('.')
-        fields = [int(x) for x in fields]
-        maj_ver, min_ver, bug_fix = fields
-        if maj_ver >= 2:
+        if parse_version(netmiko_version) >= parse_version("2.0.0"):
             netmiko_argument_map['allow_agent'] = False
-        elif maj_ver == 1 and min_ver >= 1:
+        elif parse_version(netmiko_version) >= parse_version("1.1.0"):
             netmiko_argument_map['allow_agent'] = False
 
         # Build dict of any optional Netmiko args
