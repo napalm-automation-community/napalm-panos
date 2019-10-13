@@ -2,7 +2,7 @@
   <ifnet>
     <entry>
       <name>ethernet1/1</name>
-      <zone>Trust</zone>
+      <zone/>
       <fwd>N/A</fwd>
       <vsys>1</vsys>
       <dyn-addr/>
@@ -10,6 +10,18 @@
       <tag>0</tag>
       <ip>N/A</ip>
       <id>16</id>
+      <addr/>
+    </entry>
+    <entry>
+      <name>ethernet1/1.143</name>
+      <zone>Untrust</zone>
+      <fwd>vr:default</fwd>
+      <vsys>1</vsys>
+      <dyn-addr/>
+      <addr6/>
+      <tag>143</tag>
+      <ip>1.2.3.4/28</ip>
+      <id>256</id>
       <addr/>
     </entry>
     <entry>
@@ -24,6 +36,29 @@
       <id>17</id>
       <addr/>
     </entry>
+    <entry>
+        <name>vlan</name>
+        <zone/>
+        <fwd>N/A</fwd>
+        <vsys>1</vsys>
+        <dyn-addr/>
+        <addr6/>
+        <tag>0</tag>
+        <ip>N/A</ip>
+        <id>1</id>
+        <addr/>
+    </entry>
+    <entry>
+        <name>vlan.200</name>
+        <zone>FOO</zone>
+        <fwd>vr:default</fwd>
+        <vsys>1</vsys>
+        <dyn-addr/>
+        <addr6/>
+        <tag>0</tag>
+        <ip>172.16.1.1/29</ip>
+        <id>265</id>
+        <addr/></entry>
     <entry>
       <name>loopback</name>
       <zone/>
@@ -48,6 +83,30 @@
       <id>256</id>
       <addr/>
     </entry>
+    <entry>
+      <name>tunnel</name>
+      <zone/>
+      <fwd>N/A</fwd>
+      <vsys>1</vsys>
+      <dyn-addr/>
+      <addr6/>
+      <tag>0</tag>
+      <ip>N/A</ip>
+      <id>4</id>
+      <addr/>
+    </entry>
+    <entry>
+      <name>tunnel.100</name>
+      <zone>zone1</zone>
+      <fwd>vr:default</fwd>
+      <vsys>1</vsys>
+      <dyn-addr/>
+      <addr6/>
+      <tag>0</tag>
+      <ip>2.3.4.5/30</ip>
+      <id>259</id>
+      <addr/>
+    </entry>
   </ifnet>
   <hw>
     <entry>
@@ -55,10 +114,10 @@
       <duplex>full</duplex>
       <type>0</type>
       <state>up</state>
-      <st>1000/full/up</st>
-      <mac>ba:db:ee:fb:ad:10</mac>
+      <st>10000/full/up</st>
+      <mac>00:50:56:11:22:33</mac>
       <mode>(autoneg)</mode>
-      <speed>1000</speed>
+      <speed>10000</speed>
       <id>16</id>
     </entry>
     <entry>
@@ -104,6 +163,28 @@
       <mode>(unknown)</mode>
       <speed>[n/a]</speed>
       <id>3</id>
+    </entry>
+    <entry>
+      <name>tunnel</name>
+      <duplex>[n/a]</duplex>
+      <type>6</type>
+      <state>up</state>
+      <st>[n/a]/[n/a]/up</st>
+      <mac>e4:a7:49:aa:bb:cc</mac>
+      <mode>(unknown)</mode>
+      <speed>[n/a]</speed>
+      <id>4</id>
+    </entry>
+    <entry>
+        <name>vlan</name>
+        <duplex>[n/a]</duplex>
+        <type>3</type>
+        <state>up</state>
+        <st>[n/a]/[n/a]/up</st>
+        <mac>00:11:22:33:44:55</mac>
+        <mode>(unknown)</mode>
+        <speed>[n/a]</speed>
+        <id>1</id>
     </entry>
   </hw>
 </result></response>

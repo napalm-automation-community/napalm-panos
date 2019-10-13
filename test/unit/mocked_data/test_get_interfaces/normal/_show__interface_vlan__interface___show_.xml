@@ -19,7 +19,7 @@
             <flowstate>0</flowstate>
             <ipspoof>0</ipspoof>
             <teardrop>0</teardrop>
-            <ibytes>2906986214</ibytes>
+            <ibytes>0</ibytes>
             <noarp>0</noarp>
             <noroute>0</noroute>
             <noneigh>0</noneigh>
@@ -29,37 +29,16 @@
             <other_conn>0</other_conn>
             <obytes>0</obytes>
             <land>0</land>
-            <name>ethernet1/1</name>
+            <name>vlan</name>
             <tcp_conn>0</tcp_conn>
             <neighpend>0</neighpend>
-            <ipackets>8476173</ipackets>
+            <ipackets>0</ipackets>
             <opackets>0</opackets>
             <l2_decap>0</l2_decap>
             <udp_conn>0</udp_conn>
-            <idrops>8476173</idrops>
+            <idrops>0</idrops>
           </entry>
         </ifnet>
-        <hw>
-          <entry>
-            <obytes>14379659738635</obytes>
-            <name>ethernet1/1</name>
-            <idrops>0</idrops>
-            <ipackets>3672234582</ipackets>
-            <opackets>2957211983</opackets>
-            <ierrors>717527578</ierrors>
-            <ibytes>1569907802791</ibytes>
-            <port>
-              <tx-unicast>11547146575</tx-unicast>
-              <tx-multicast>0</tx-multicast>
-              <rx-broadcast>0</rx-broadcast>
-              <rx-unicast>3672234582</rx-unicast>
-              <rx-multicast>0</rx-multicast>
-              <rx-bytes>1569907802791</rx-bytes>
-              <tx-broadcast>0</tx-broadcast>
-              <tx-bytes>14379659738635</tx-bytes>
-            </port>
-          </entry>
-        </hw>
       </counters>
       <addr6/>
       <ra>False</ra>
@@ -69,23 +48,24 @@
       <mssadjv6>0</mssadjv6>
       <ndpmon>False</ndpmon>
       <zone>N/A</zone>
-      <id>16</id>
+      <id>1</id>
       <mgt_subnet>False</mgt_subnet>
-      <name>ethernet1/1</name>
+      <name>vlan</name>
     </ifnet>
     <hw>
-      <name>ethernet1/1</name>
-      <duplex>full</duplex>
-      <type>0</type>
+      <name>vlan</name>
+      <duplex>[n/a]</duplex>
+      <type>3</type>
       <state_c>auto</state_c>
-      <mac>00:50:56:11:22:33</mac>
+      <mac>00:11:22:33:44:55</mac>
       <state>up</state>
       <duplex_c>auto</duplex_c>
       <mode>layer3</mode>
       <speed_c>auto</speed_c>
-      <speed>10000</speed>
-      <id>16</id>
+      <speed>[n/a]</speed>
+      <id>1</id>
       <untag>False</untag>
+      <counters/>
     </hw>
     <dp>dp0</dp>
   </result>
