@@ -409,6 +409,11 @@ class PANOSDriver(NetworkDriver):
         except AttributeError:
             lldp_table = []
 
+        if isinstance(lldp_table,dict):
+            # If only 1 interface is listed, xmltodict returns a dictionary, otherwise
+            # it returns a list of dictionaries.
+            lldp_table = [lldp_table]
+
         for lldp_item in lldp_table:
 
             local_int = lldp_item['@name']
