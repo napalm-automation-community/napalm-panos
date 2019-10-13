@@ -220,12 +220,11 @@ class PANOSDriver(NetworkDriver):
         if self.ssh_connection is False:
             self._open_ssh()
 
-        if file_config:
-            if isinstance(config, str):
+        if isinstance(config, str):
+            if file_config:
                 config = config.splitlines()
-        else:
-            if isinstance(config, str):
-                config = str(config).split()
+            else:
+                config = str(config).splitlines()
 
         self.ssh_device.send_config_set(config)
         self.loaded = True
