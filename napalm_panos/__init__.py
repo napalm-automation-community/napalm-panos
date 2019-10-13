@@ -21,8 +21,8 @@ import pkg_resources
 from napalm_panos.panos import PANOSDriver
 
 try:
-    __version__ = pkg_resources.get_distribution('napalm-panos').version
+    __version__ = pkg_resources.get_distribution("napalm-panos").version
 except pkg_resources.DistributionNotFound:
     __version__ = "Not installed"
 
-__all__ = ('PANOSDriver',)
+__all__ = ("PANOSDriver",)

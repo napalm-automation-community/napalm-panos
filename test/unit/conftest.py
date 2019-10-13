@@ -8,16 +8,18 @@ from napalm.base.test.double import BaseTestDouble
 from napalm_panos import PANOSDriver as OriginalDriver
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope="class")
 def set_device_parameters(request):
     """Set up the class."""
+
     def fin():
         request.cls.device.close()
+
     request.addfinalizer(fin)
 
     request.cls.driver = OriginalDriver
     request.cls.patched_driver = PatchedDriver
-    request.cls.vendor = 'panos'
+    request.cls.vendor = "panos"
     parent_conftest.set_device_parameters(request)
 
 
@@ -28,9 +30,10 @@ def pytest_generate_tests(metafunc):
 
 class PatchedDriver(OriginalDriver):
     """Patched Driver."""
+
     def __init__(self, hostname, username, password, timeout=60, optional_args=None):
         super().__init__(hostname, username, password, timeout, optional_args)
-        self.patched_attrs = ['device']
+        self.patched_attrs = ["device"]
         self.device = FakeDevice()
 
     def open(self):
@@ -40,14 +43,14 @@ class PatchedDriver(OriginalDriver):
         pass
 
     def is_alive(self):
-        return({'is_alive': True})
+        return {"is_alive": True}
 
 
 class FakeDevice(BaseTestDouble):
     """Device test double."""
 
     def __init__(self):
-        self.cmd = ''
+        self.cmd = ""
 
     @staticmethod
     def read_txt_file(filename):
@@ -56,16 +59,16 @@ class FakeDevice(BaseTestDouble):
             return data_file.read()
 
     def xml_root(self):
-        tmp_str = self.cmd.replace('<', '_').replace('>', '_')
-        filename = tmp_str.replace('/', '_').replace('\n', '').replace(' ', '')
-        full_path = self.find_file('{}.xml'.format(filename))
+        tmp_str = self.cmd.replace("<", "_").replace(">", "_")
+        filename = tmp_str.replace("/", "_").replace("\n", "").replace(" ", "")
+        full_path = self.find_file("{}.xml".format(filename))
         xml_string = self.read_txt_file(full_path)
         return xml_string
 
-    def op(self, cmd=''):
+    def op(self, cmd=""):
         self.cmd = cmd
         return True
 
-    def show(self, cmd=''):
-        self.cmd = 'running_config'
+    def show(self, cmd=""):
+        self.cmd = "running_config"
         return True
