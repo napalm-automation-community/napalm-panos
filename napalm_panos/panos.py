@@ -24,6 +24,7 @@ import requests_toolbelt
 from pkg_resources import parse_version
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from datetime import datetime
+import logging
 import time
 import re
 
@@ -54,11 +55,11 @@ from netmiko import ConnectHandler
 from netmiko import __version__ as netmiko_version
 from pan.xapi import PanXapiError
 
-import logging
+
 LOGGER = logging.getLogger(__name__)
 
 
-class PANOSLock():
+class PANOSLock:
 
     """
     An object to create and release a config- and commit-lock on a PANOS device. Can be used
@@ -77,9 +78,11 @@ class PANOSLock():
           the administrator who set the locks performs a commit operation on the device.
     """
 
-    LOCK_TYPES = ('config', 'commit')
-    TAKE_LOCK_API_CMD = '<request><{0}-lock><add><comment>{1}</comment></add></{0}-lock></request>'
-    RELEASE_LOCK_API_CMD = '<request><{0}-lock><remove></remove></{0}-lock></request>'
+    LOCK_TYPES = ("config", "commit")
+    TAKE_LOCK_API_CMD = (
+        "<request><{0}-lock><add><comment>{1}</comment></add></{0}-lock></request>"
+    )
+    RELEASE_LOCK_API_CMD = "<request><{0}-lock><remove></remove></{0}-lock></request>"
 
     def __init__(self, device, lock_comment) -> None:
         self._device = device
@@ -97,7 +100,7 @@ class PANOSLock():
         Take lock for config editing and committing new configurations.
         """
         if self.locked:
-            LOGGER.debug('Config and commit already locked - skipping')
+            LOGGER.debug("Config and commit already locked - skipping")
             return
 
         for lock_type in self.LOCK_TYPES:
@@ -110,8 +113,8 @@ class PANOSLock():
                 # again. If for some reason there is a lock that was left by this program
                 # but was not removed due to a crash for example, the lock should be manually
                 # removed for example by using CLI.
-                raise LockError(f'Failed to aquire {lock_type}-lock: {str(e)}')
-            LOGGER.debug(f'{lock_type}-lock acquired')
+                raise LockError(f"Failed to aquire {lock_type}-lock: {str(e)}")
+            LOGGER.debug(f"{lock_type}-lock acquired")
         self.locked = True
 
     def unlock(self):
@@ -119,7 +122,7 @@ class PANOSLock():
         Release lock for config editing and committing new configurations.
         """
         if self.locked is False:
-            LOGGER.debug('Config and commit was not locked - skipping release')
+            LOGGER.debug("Config and commit was not locked - skipping release")
             return
 
         for lock_type in self.LOCK_TYPES:
@@ -140,8 +143,8 @@ class PANOSLock():
                 # If it becomes an issue, it would be possible to inspect the comment of the lock, to
                 # determine if it was left by this program or by someone manually (who hopefully left
                 # a differing comment). Still not 100% proof, but makes success more likely.
-                raise UnlockError(f'Failed to release {lock_type}-lock: {str(e)}')
-            LOGGER.debug(f'{lock_type}-lock released')
+                raise UnlockError(f"Failed to release {lock_type}-lock: {str(e)}")
+            LOGGER.debug(f"{lock_type}-lock released")
         self.locked = False
 
 
@@ -161,6 +164,11 @@ class PANOSDriver(NetworkDriver):
 
         if optional_args is None:
             optional_args = {}
+
+        self._session_config_lock = optional_args.get("config_lock", False)
+        self._session_config_lock_comment = optional_args.get(
+            "config_lock_comment", "NAPALM-managed-lock"
+        )
 
         netmiko_argument_map = {
             "port": None,
@@ -188,7 +196,7 @@ class PANOSDriver(NetworkDriver):
                 pass
         self.api_key = optional_args.get("api_key", "")
 
-    def open(self, lock_message='NAPALM-managed-lock'):
+    def open(self):
         try:
             if self.api_key:
                 self.device = pan.xapi.PanXapi(
@@ -202,9 +210,13 @@ class PANOSDriver(NetworkDriver):
                 )
         except ConnectionException as e:
             raise ConnectionException(str(e))
-        if self._lock_object is None:
-            self._lock_object = PANOSLock(self.device, lock_message)
-        self._lock_object.lock()
+
+        if self._session_config_lock:
+            if self._lock_object is None:
+                self._lock_object = PANOSLock(
+                    self.device, self._session_config_lock_comment
+                )
+            self._lock_object.lock()
 
     def _open_ssh(self):
         try:
@@ -213,7 +225,7 @@ class PANOSDriver(NetworkDriver):
                 ip=self.hostname,
                 username=self.username,
                 password=self.password,
-                **self.netmiko_optional_args
+                **self.netmiko_optional_args,
             )
         except ConnectionException as e:
             raise ConnectionException(str(e))
@@ -221,7 +233,7 @@ class PANOSDriver(NetworkDriver):
         self.ssh_connection = True
 
     def close(self):
-        if self._lock_object is not None:
+        if self._session_config_lock and self._lock_object is not None:
             self._lock_object.unlock()
             self._lock_object = None
 
@@ -439,10 +451,11 @@ class PANOSDriver(NetworkDriver):
         else:
             raise ReplaceConfigException("No config loaded.")
 
-        # PANOS device releases locks automatically upon commit. Take lock again, and let
-        # it be explicitly released by the driver when the driver is being closed.
-        self._lock_object.locked = False  # Allow lock to be taken again.
-        self._lock_object.lock()
+        if self._session_config_lock:
+            # PANOS device releases locks automatically upon commit. Take lock again, and let
+            # it be explicitly released by the driver when the driver is being closed.
+            self._lock_object.locked = False  # Allow lock to be taken again.
+            self._lock_object.lock()
 
     def discard_config(self):
         if self.loaded:
