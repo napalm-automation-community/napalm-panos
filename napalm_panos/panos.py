@@ -16,6 +16,7 @@
 
 # std libs
 import json
+import logging
 import os.path
 import re
 import time
@@ -24,8 +25,10 @@ from datetime import datetime
 
 from napalm.base import NetworkDriver
 from napalm.base.exceptions import ConnectionException
+from napalm.base.exceptions import LockError
 from napalm.base.exceptions import MergeConfigException
 from napalm.base.exceptions import ReplaceConfigException
+from napalm.base.exceptions import UnlockError
 from napalm.base.helpers import mac as standardize_mac
 from napalm.base.utils.string_parsers import convert_uptime_string_seconds
 
@@ -45,8 +48,90 @@ from urllib3.exceptions import InsecureRequestWarning
 
 import xmltodict
 
+LOGGER = logging.getLogger(__name__)
 
-# local modules
+
+class PANOSLock:
+    """An object to create and release a config- and commit-lock on a PANOS device. Can be used as a context-manager.
+
+    The locks are acquired and released using XML API. Locks for config and commit lock
+    are obtained and released separately from each other. Both locks are released automatically
+    by the device when a commit is made on the device.
+
+    For troubleshooting:
+    - The code crashed in a way that the lock could not be removed?
+        - Remove the lock manually (CLI, API, Web UI). The lock can only be removed by the
+          administrator who set it, or by a superuser.
+    - The lock disappeared in the middle of program execution?
+        - Did someone do a commit on the device? The locks are removed automatically when
+          the administrator who set the locks performs a commit operation on the device.
+    """
+
+    LOCK_TYPES = ("config", "commit")
+    TAKE_LOCK_API_CMD = "<request><{0}-lock><add><comment>{1}</comment></add></{0}-lock></request>"
+    RELEASE_LOCK_API_CMD = "<request><{0}-lock><remove></remove></{0}-lock></request>"
+
+    def __init__(self, device, lock_comment) -> None:
+        """Initiate Method."""
+        self._device = device
+        self._lock_comment = lock_comment
+        self.locked = False
+
+    def __enter__(self):
+        """Enter for context manager."""
+        self.lock()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Exit for context manager."""
+        self.unlock()
+
+    def lock(self):
+        """Take lock for config editing and committing new configurations."""
+        if self.locked:
+            LOGGER.debug("Config and commit already locked - skipping")
+            return
+
+        for lock_type in self.LOCK_TYPES:
+            cmd = self.TAKE_LOCK_API_CMD.format(lock_type, self._lock_comment)
+            try:
+                self._device.op(cmd=cmd)
+            except pan.xapi.PanXapiError as exc:
+                # In case there was any error - also if there already existed some lock,
+                # created by our current user - abort the operation. User must manually try
+                # again. If for some reason there is a lock that was left by this program
+                # but was not removed due to a crash for example, the lock should be manually
+                # removed for example by using CLI.
+                raise LockError(f"Failed to aquire {lock_type}-lock: {str(exc)}")
+            LOGGER.debug("%s-lock acquired", lock_type)
+        self.locked = True
+
+    def unlock(self):
+        """Release lock for config editing and committing new configurations."""
+        if self.locked is False:
+            LOGGER.debug("Config and commit was not locked - skipping release")
+            return
+
+        for lock_type in self.LOCK_TYPES:
+            cmd = self.RELEASE_LOCK_API_CMD.format(lock_type)
+            try:
+                self._device.op(cmd=cmd)
+            except pan.xapi.PanXapiError as exc:
+                # In case there was any error - also if the lock no longer existed - abort the
+                # operation. If lock was removed by someone else, it implies the conf files
+                # may have changed in the middle of whatever was being done during the lock this
+                # program took.
+                #
+                # Note: There is a possible edge-case that is not currently handled: Someone
+                # removed the lock (possibly made changes and committed them) and then created a
+                # new lock, so the lock being removed now is not the one we created. Then its possible
+                # that for example when different conf formats are being saved, one of the formats has
+                # different data than the others. This case is considered to be too rare for now.
+                # If it becomes an issue, it would be possible to inspect the comment of the lock, to
+                # determine if it was left by this program or by someone manually (who hopefully left
+                # a differing comment). Still not 100% proof, but makes success more likely.
+                raise UnlockError(f"Failed to release {lock_type}-lock: {str(exc)}")
+            LOGGER.debug("%s-lock released", lock_type)
+        self.locked = False
 
 
 class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attributes
@@ -68,6 +153,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         self.merge_config = False
         self.backup_file = None
         self.platform = "panos"
+        self._lock_object = None
 
         if optional_args is None:
             optional_args = {}
@@ -101,6 +187,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
     def open(self):
         """PANOS version of `open` method, see NAPALM for documentation."""
+        lock_message = "NAPALM-managed-lock"
         try:
             if self.api_key:
                 self.device = pan.xapi.PanXapi(hostname=self.hostname, api_key=self.api_key)
@@ -112,6 +199,9 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
                 )
         except ConnectionException as exc:
             raise ConnectionException(str(exc))
+        if self._lock_object is None:
+            self._lock_object = PANOSLock(self.device, lock_message)
+        self._lock_object.lock()
 
     def _open_ssh(self):
         try:
@@ -129,6 +219,10 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
     def close(self):
         """PANOS version of `close` method, see NAPALM for documentation."""
+        if self._lock_object is not None:
+            self._lock_object.unlock()
+            self._lock_object = None
+
         self.device = None
         if self.ssh_connection:
             self.ssh_device.disconnect()
@@ -320,6 +414,10 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             time.sleep(3)
             self.loaded = False
             self.changed = True
+            # PANOS device releases locks automatically upon commit. Take lock again, and let
+            # it be explicitly released by the driver when the driver is being closed.
+            self._lock_object.locked = False  # Allow lock to be taken again.
+            self._lock_object.lock()
         except:  # noqa
             if self.merge_config:
                 raise MergeConfigException("Error while commiting config")
