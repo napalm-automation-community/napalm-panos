@@ -28,23 +28,12 @@ import time
 import re
 
 # local modules
-try:
-    from napalm.base.utils.string_parsers import convert_uptime_string_seconds
-    from napalm.base.exceptions import ConnectionException
-    from napalm.base.exceptions import ReplaceConfigException
-    from napalm.base.exceptions import MergeConfigException
-    from napalm.base import NetworkDriver
-    from napalm.base.utils import py23_compat
-    from napalm.base.helpers import mac as standardize_mac
-except ImportError:
-    from napalm_base.utils.string_parsers import convert_uptime_string_seconds
-    from napalm_base.exceptions import ConnectionException
-    from napalm_base.exceptions import ReplaceConfigException
-    from napalm_base.exceptions import MergeConfigException
-    from napalm_base.base import NetworkDriver
-    from napalm_base.utils import py23_compat
-    from napalm_base.helpers import mac as standardize_mac
-
+from napalm.base.utils.string_parsers import convert_uptime_string_seconds
+from napalm.base.exceptions import ConnectionException
+from napalm.base.exceptions import ReplaceConfigException
+from napalm.base.exceptions import MergeConfigException
+from napalm.base import NetworkDriver
+from napalm.base.helpers import mac as standardize_mac
 
 from netmiko import ConnectHandler
 from netmiko import __version__ as netmiko_version
@@ -241,27 +230,29 @@ class PANOSDriver(NetworkDriver):
         running = str(self.device.xml_root())
         return running
 
-    def get_config(self, retrieve="all", full=False):
+    def get_config(self, retrieve="all", full=False, sanitized=False):
         """
-        Full is not supported, need to apply to pass tests. It
+        Full and Sanitized is not supported, need to apply to pass tests. It
         is not clear to me if this construct exists in panos
         """
         if full:
             raise NotImplementedError(
                 "Full config is not implemented for this platform"
             )
+        if sanitized:
+            raise NotImplementedError("Sanitized is not implemented for this platform")
         configs = {}
-        running = py23_compat.text_type("")
-        candidate = py23_compat.text_type("")
-        startup = py23_compat.text_type("")
+        running = ""
+        candidate = ""
+        startup = ""
 
         if retrieve == "all":
-            running = py23_compat.text_type(self._get_running())
-            candidate = py23_compat.text_type(self._get_candidate())
+            running = self._get_running()
+            candidate = self._get_candidate()
         elif retrieve == "running":
-            running = py23_compat.text_type(self._get_running())
+            running = self._get_running()
         elif retrieve == "candidate":
-            candidate = py23_compat.text_type(self._get_candidate())
+            candidate = self._get_candidate()
 
         configs["running"] = running
         configs["candidate"] = candidate
@@ -311,7 +302,7 @@ class PANOSDriver(NetworkDriver):
         else:
             return False
 
-    def commit_config(self, message=None):
+    def commit_config(self, message=""):
         """
         Netmiko is being used to commit the configuration because it takes
         a better care of results compared to pan-python.
@@ -401,12 +392,12 @@ class PANOSDriver(NetworkDriver):
 
         if system_info:
             facts["hostname"] = system_info["hostname"]
-            facts["vendor"] = py23_compat.text_type("Palo Alto Networks")
+            facts["vendor"] = "Palo Alto Networks"
             facts["uptime"] = int(convert_uptime_string_seconds(system_info["uptime"]))
             facts["os_version"] = system_info["sw-version"]
             facts["serial_number"] = system_info["serial"]
             facts["model"] = system_info["model"]
-            facts["fqdn"] = py23_compat.text_type("N/A")
+            facts["fqdn"] = "N/A"
             facts["interface_list"] = self._extract_interface_list()
 
             facts["interface_list"].sort()
@@ -452,8 +443,11 @@ class PANOSDriver(NetworkDriver):
                 neighbors[local_int].append(n)
         return neighbors
 
-    def get_route_to(self, destination="", protocol=""):
+    def get_route_to(self, destination="", protocol="", longer=False):
         """Return route details to a specific destination, learned from a certain protocol."""
+
+        if longer:
+            raise NotImplementedError("Longer is not implemented for this platform")
 
         # Note, it should be possible to query the FIB:
         # "<show><routing><fib></fib></routing></show>"
@@ -589,7 +583,7 @@ class PANOSDriver(NetworkDriver):
             else:
                 interface["speed"] = int(interface["speed"])
             interface["mac_address"] = standardize_mac(interface_info.get("mac"))
-            interface["description"] = py23_compat.text_type("N/A")
+            interface["description"] = "N/A"
             interface_dict[intf] = interface
 
         return interface_dict
