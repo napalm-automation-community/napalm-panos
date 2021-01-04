@@ -137,12 +137,13 @@ class PANOSLock:
                 #
                 # Note: There is a possible edge-case that is not currently handled: Someone
                 # removed the lock (possibly made changes and committed them) and then created a
-                # new lock, so the lock being removed now is not the one we created. Then its possible
-                # that for example when different conf formats are being saved, one of the formats has
-                # different data than the others. This case is considered to be too rare for now.
-                # If it becomes an issue, it would be possible to inspect the comment of the lock, to
-                # determine if it was left by this program or by someone manually (who hopefully left
-                # a differing comment). Still not 100% proof, but makes success more likely.
+                # new lock, so the lock being removed now is not the one we created. Then its
+                # possible that for example when different conf formats are being saved, one
+                # of the formats has different data than the others. This case is considered to
+                # be too rare for now. If it becomes an issue, it would be possible to inspect
+                # the comment of the lock, to determine if it was left by this program or by
+                # someone manually (who hopefully left a differing comment). Still not 100%
+                # proof, but makes success more likely.
                 raise UnlockError("Failed to release {0}-lock: {1}".format(lock_type, str(e)))
             LOGGER.debug("{0}-lock released".format(lock_type))
         self.locked = False
