@@ -113,8 +113,8 @@ class PANOSLock:
                 # again. If for some reason there is a lock that was left by this program
                 # but was not removed due to a crash for example, the lock should be manually
                 # removed for example by using CLI.
-                raise LockError(f"Failed to aquire {lock_type}-lock: {str(e)}")
-            LOGGER.debug(f"{lock_type}-lock acquired")
+                raise LockError("Failed to aquire {0}-lock: {1}".format(lock_type, str(e)))
+            LOGGER.debug("{0}-lock acquired".format(lock_type))
         self.locked = True
 
     def unlock(self):
@@ -143,8 +143,8 @@ class PANOSLock:
                 # If it becomes an issue, it would be possible to inspect the comment of the lock, to
                 # determine if it was left by this program or by someone manually (who hopefully left
                 # a differing comment). Still not 100% proof, but makes success more likely.
-                raise UnlockError(f"Failed to release {lock_type}-lock: {str(e)}")
-            LOGGER.debug(f"{lock_type}-lock released")
+                raise UnlockError("Failed to release {0}-lock: {1}".format(lock_type, str(e)))
+            LOGGER.debug("{0}-lock released".format(lock_type))
         self.locked = False
 
 
