@@ -1,6 +1,6 @@
 coveralls
 pydocstyle==3.0.0
-pytest
+pytest==5.4.3
 pytest-cov
 pytest-json
 pytest-pythonpath

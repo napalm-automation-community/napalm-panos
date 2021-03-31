@@ -1,7 +1,8 @@
-napalm>=2.3.0
-lxml==4.3.5
+cryptography==3.3.2
+napalm>=3.0.0,<4.0
+lxml==4.6.3
 pan-python
-netmiko>=1.0.0
+netmiko>=3.3.2,<4.0
 requests-toolbelt
 xmltodict
 future
