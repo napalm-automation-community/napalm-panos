@@ -307,13 +307,13 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             return True
         return False
 
-    def commit_config(self, message="", revert_in=None):
+    def commit_config(self, message="", revert_in=None, **kwargs):
         """Netmiko is being used to commit the configuration because it takes a better care of results compared to pan-python."""
         if self.loaded:
             if self.ssh_connection is False:
                 self._open_ssh()
             try:
-                self.ssh_device.commit(comment=message)
+                self.ssh_device.commit(comment=message, **kwargs)
                 time.sleep(3)
                 self.loaded = False
                 self.changed = True
