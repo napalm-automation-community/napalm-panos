@@ -302,7 +302,7 @@ class PANOSDriver(NetworkDriver):
         else:
             return False
 
-    def commit_config(self, message=""):
+    def commit_config(self, message="", **kwargs):
         """
         Netmiko is being used to commit the configuration because it takes
         a better care of results compared to pan-python.
@@ -311,7 +311,7 @@ class PANOSDriver(NetworkDriver):
             if self.ssh_connection is False:
                 self._open_ssh()
             try:
-                self.ssh_device.commit(comment=message)
+                self.ssh_device.commit(comment=message, **kwargs)
                 time.sleep(3)
                 self.loaded = False
                 self.changed = True
