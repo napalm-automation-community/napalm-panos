@@ -9,7 +9,7 @@ with open("requirements.txt", "r") as fs:
 
 setup(
     name="napalm-panos",
-    version="0.5.2",
+    version="0.5.3",
     packages=find_packages(),
     author="Gabriele Gerbino",
     author_email="gabriele@networktocode.com",
