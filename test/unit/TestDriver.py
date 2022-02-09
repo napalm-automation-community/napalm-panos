@@ -15,8 +15,9 @@
 """Tests."""
 import unittest
 
-from napalm_panos import panos
 from napalm.base.test.base import TestConfigNetworkDriver
+
+from napalm_panos import panos
 
 
 class TestConfigDriver(unittest.TestCase, TestConfigNetworkDriver):
@@ -24,9 +25,10 @@ class TestConfigDriver(unittest.TestCase, TestConfigNetworkDriver):
 
     @classmethod
     def setUpClass(cls):
+        """Test Driver.* methods."""
         hostname = "1.2.3.4"
         username = "test"
-        password = "test"
+        password = "test"  # nosec
         cls.vendor = "panos"
 
         cls.device = panos.PANOSDriver(hostname, username, password, timeout=60)
