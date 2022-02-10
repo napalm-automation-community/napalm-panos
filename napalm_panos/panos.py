@@ -559,7 +559,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             except KeyError as err:
                 if intf.startswith(("loopback.", "tunnel.")) and 'hw' in str(err):
                     # loopback sub-ifs don't return a 'hw' key
-                    interface_dict[intf] = LOOPBACK_SUBIF_DEFAULTS
+                    interface_dict[intf] = subif_defaults
                     continue
                 raise
 
