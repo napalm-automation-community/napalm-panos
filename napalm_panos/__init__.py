@@ -14,15 +14,9 @@
 
 """napalm_panos package."""
 
-# Import stdlib
-import pkg_resources
-
 # Import local modules
 from napalm_panos.panos import PANOSDriver
 
-try:
-    __version__ = pkg_resources.get_distribution("napalm-panos").version
-except pkg_resources.DistributionNotFound:
-    __version__ = "Not installed"
+__version__ = "0.5.3"
 
 __all__ = ("PANOSDriver",)
