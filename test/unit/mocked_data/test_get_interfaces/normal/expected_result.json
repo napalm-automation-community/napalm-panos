@@ -5,6 +5,7 @@
         "mac_address": "BA:DB:EE:FB:AD:12",
         "speed": 1000,
         "description": "N/A",
+        "mtu": 0,
         "last_flapped": -1.0
     },
     "ethernet1/4": {
@@ -13,6 +14,7 @@
         "mac_address": "BA:DB:EE:FB:AD:13",
         "speed": 1000,
         "description": "N/A",
+        "mtu": 0,
         "last_flapped": -1.0
     },
     "ethernet1/2": {
@@ -21,6 +23,7 @@
         "mac_address": "BA:DB:EE:FB:AD:11",
         "speed": 1000,
         "description": "N/A",
+        "mtu": 0,
         "last_flapped": -1.0
     },
     "loopback": {
@@ -29,14 +32,25 @@
         "mac_address": "BA:DB:EE:FB:AD:03",
         "speed": 0,
         "description": "N/A",
+        "mtu": 0,
         "last_flapped": -1.0
     },
     "ethernet1/1": {
         "is_enabled": true,
         "is_up": true,
-        "mac_address": "BA:DB:EE:FB:AD:10",
-        "speed": 1000,
+        "mac_address": "00:50:56:11:22:33",
+        "speed": 10000,
         "description": "N/A",
+        "mtu": 0,
+        "last_flapped": -1.0
+    },
+    "tunnel": {
+        "is_enabled": true,
+        "is_up": true,
+        "mac_address": "E4:A7:49:AA:BB:CC",
+        "speed": 0,
+        "description": "N/A",
+        "mtu": 0,
         "last_flapped": -1.0
     },
     "loopback.100": {
@@ -45,6 +59,46 @@
         "mac_address": "",
         "speed": 0,
         "description": "N/A",
+        "mtu": 0,
         "is_up": true
+    },
+    "tunnel.100": {
+        "is_enabled": true,
+        "last_flapped": -1.0,
+        "mac_address": "",
+        "speed": 0,
+        "description": "N/A",
+        "mtu": 0,
+        "is_up": true
+    },
+    "ethernet1/1.143": {
+        "is_enabled": true,
+        "last_flapped": -1.0,
+        "mac_address": "",
+        "speed": 0,
+        "description": "N/A",
+        "mtu": 0,
+        "is_up": true
+
+    },
+    "vlan": {
+        "is_enabled": true,
+        "last_flapped": -1.0,
+        "mac_address": "00:11:22:33:44:55",
+        "speed": 0,
+        "description": "N/A",
+        "mtu": 0,
+        "is_up": true
+
+    },
+    "vlan.200": {
+        "is_enabled": true,
+        "last_flapped": -1.0,
+        "mac_address": "",
+        "speed": 0,
+        "description": "N/A",
+        "mtu": 0,
+        "is_up": true
+
     }
 }
