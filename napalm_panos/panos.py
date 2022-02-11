@@ -203,7 +203,8 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
             if self.device.status == "success":
                 self.loaded = True
-            raise ReplaceConfigException(f"Error while loading config from {path}")
+            else:
+                raise ReplaceConfigException(f"Error while loading config from {path}")
 
         raise ReplaceConfigException("This method requires a config file.")
 
