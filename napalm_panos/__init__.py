@@ -17,6 +17,6 @@
 # Import local modules
 from napalm_panos.panos import PANOSDriver
 
-__version__ = "0.5.3"
+__version__ = "0.5.4"
 
 __all__ = ("PANOSDriver",)
