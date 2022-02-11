@@ -516,7 +516,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
         return routes
 
-    def get_interfaces(self):
+    def get_interfaces(self):  # pylint: disable=too-many-locals
         """PANOS version of `get_interfaces` method, see NAPALM for documentation."""
         subif_defaults = {
             "is_up": True,
@@ -531,21 +531,23 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         interface_dict = {}
         interface_descr = {}
         interface_list = self._extract_interface_list()
+        
 
-        self.device.get(xpath="/config/devices/entry[@name='localhost.localdomain']/network/interface")
-        for eth_int in self.device.element_result.findall(".//ethernet/entry"):
+
+        config = xml.etree.ElementTree.fromstring(self.get_config()["running"])
+        for eth_int in config.findall(".//ethernet/entry"):
             name = eth_int.attrib["name"]
-            description = eth_int.findtext(".//comment") or ''
+            description = eth_int.findtext(".//comment") or ""
             interface_descr[name] = description.strip()
-        for eth_int in self.device.element_result.findall(".//vlan/units/entry"):
+        for eth_int in config.findall(".//vlan/units/entry"):
             name = eth_int.attrib["name"]
-            description = eth_int.findtext(".//comment") or ''
+            description = eth_int.findtext(".//comment") or ""
             interface_descr[name] = description.strip()
-        for eth_int in self.device.element_result.findall(".//tunnel/units/entry"):
+        for eth_int in config.findall(".//tunnel/units/entry"):
             name = eth_int.attrib["name"]
-            description = eth_int.findtext(".//comment") or ''
+            description = eth_int.findtext(".//comment") or ""
             interface_descr[name] = description.strip()
-        interface_descr["loopback"] = self.device.element_result.findtext(".//loopback/comment") or ''
+        interface_descr["loopback"] = config.findtext(".//loopback/comment") or ""
 
         for intf in interface_list:
             interface = {}
@@ -557,8 +559,8 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
                 interface_info_json = json.dumps(interface_info_xml["response"]["result"]["hw"])
                 interface_info = json.loads(interface_info_json)
             except KeyError as err:
-                if intf.startswith(("loopback.", "tunnel.")) and 'hw' in str(err):
-                    # loopback sub-ifs don't return a 'hw' key
+                if interface_pattern.search(intf) and "hw" in str(err):
+                    # physical/ae/tunnel/loopback sub-ifs don't return a 'hw' key
                     interface_dict[intf] = subif_defaults
                     continue
                 raise
