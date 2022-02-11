@@ -162,12 +162,13 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             headers={"Content-Type": mef.content_type},
             data=mef,
         )
-
         # if something goes wrong just raise an exception
         request.raise_for_status()
         response = xml.etree.ElementTree.fromstring(request.content)  # nosec
 
         if response.attrib["status"] == "error":
+            # Log request.content here when logging is added. One known use case is
+            # using reserved config filename, such as running-config.xml
             return False
         return path
 
@@ -187,26 +188,25 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         if config:
             raise ReplaceConfigException("This method requires a config file.")
 
-        if filename:
-            if self.loaded is False:
-                if self._save_backup() is False:
-                    raise ReplaceConfigException("Error while storing backup config")
+        if not filename:
+            raise ReplaceConfigException("This method requires a config file.")
 
-            path = self._import_file(filename)
-            if path is False:
-                msg = "Error while trying to move the config file to the device."
-                raise ReplaceConfigException(msg)
+        if self.loaded is False:
+            if self._save_backup() is False:
+                raise ReplaceConfigException("Error while storing backup config")
 
-            # Let's load the config.
-            cmd = f"<load><config><from>{path}</from></config></load>"
-            self.device.op(cmd=cmd)
+        path = self._import_file(filename)
+        if path is False:
+            msg = "Error while trying to move the config file to the device."
+            raise ReplaceConfigException(msg)
 
-            if self.device.status == "success":
-                self.loaded = True
-            else:
-                raise ReplaceConfigException(f"Error while loading config from {path}")
+        # Let's load the config.
+        cmd = f"<load><config><from>{path}</from></config></load>"
+        self.device.op(cmd=cmd)
 
-        raise ReplaceConfigException("This method requires a config file.")
+        if self.device.status != "success":
+            raise ReplaceConfigException(f"Error while loading config from {path}")
+        self.loaded = True
 
     def _get_file_content(self, filename):  # pylint: disable=no-self-use
         """Convenience method to get file content."""
@@ -310,19 +310,20 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
     def commit_config(self, message="", revert_in=None):
         """Netmiko is being used to commit the configuration because it takes a better care of results compared to pan-python."""
-        if self.loaded:
-            if self.ssh_connection is False:
-                self._open_ssh()
-            try:
-                self.ssh_device.commit(comment=message)
-                time.sleep(3)
-                self.loaded = False
-                self.changed = True
-            except:  # noqa
-                if self.merge_config:
-                    raise MergeConfigException("Error while commiting config")
-                raise ReplaceConfigException("Error while commiting config")
-        raise ReplaceConfigException("No config loaded.")
+        if not self.loaded:
+            raise ReplaceConfigException("No config loaded.")
+
+        if self.ssh_connection is False:
+            self._open_ssh()
+        try:
+            self.ssh_device.commit(comment=message)
+            time.sleep(3)
+            self.loaded = False
+            self.changed = True
+        except:  # noqa
+            if self.merge_config:
+                raise MergeConfigException("Error while commiting config")
+            raise ReplaceConfigException("Error while commiting config")
 
     def discard_config(self):
         """PANOS version of `discard_config` method, see NAPALM for documentation."""
