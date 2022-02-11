@@ -531,10 +531,8 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         interface_dict = {}
         interface_descr = {}
         interface_list = self._extract_interface_list()
-        
 
-
-        config = xml.etree.ElementTree.fromstring(self.get_config()["running"])
+        config = xml.etree.ElementTree.fromstring(self.get_config()["running"])  # nosec
         for eth_int in config.findall(".//ethernet/entry"):
             name = eth_int.attrib["name"]
             description = eth_int.findtext(".//comment") or ""
