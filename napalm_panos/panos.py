@@ -437,6 +437,10 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
         interface_set = set()
 
+        # Interfaces on an empty VM may have a empty list if no interfaces are defined.
+        if interfaces is None:
+            return []
+
         for entry in interfaces.values():
             for entry_contents in entry.values():
                 if isinstance(entry_contents, dict):
