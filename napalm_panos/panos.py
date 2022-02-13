@@ -53,19 +53,6 @@ LOCK_TYPES = ("config", "commit")
 TAKE_LOCK_API_CMD = """<request><{0}-lock><add><comment>NAPALM-managed-lock</comment></add></{0}-lock></request>"""
 RELEASE_LOCK_API_CMD = "<request><{0}-lock><remove></remove></{0}-lock></request>"
 
-"""The locks are acquired and released using XML API. Locks for config and commit lock
-are obtained and released separately from each other. Both locks are released automatically
-by the device when a commit is made on the device.
-
-For troubleshooting:
-- The code crashed in a way that the lock could not be removed?
-    - Remove the lock manually (CLI, API, Web UI). The lock can only be removed by the
-        administrator who set it, or by a superuser.
-- The lock disappeared in the middle of program execution?
-    - Did someone do a commit on the device? The locks are removed automatically when
-        the administrator who set the locks performs a commit operation on the device.
-"""
-
 
 class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attributes
     """PANOS Driver, that inhertis from the base napalm class."""
