@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "napalm_panos"
-version = "0.5.5"
+version = "0.5.4"
 description = "Network Automation and Programmability Abstraction Layer with Multivendor support for PANOS."
 authors = ["Gabriele Gerbino <gabriele@networktocode.com>"]
 license = "Apache-2.0"
