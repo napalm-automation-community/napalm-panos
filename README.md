@@ -4,3 +4,5 @@
 [![Coverage Status](https://coveralls.io/repos/github/napalm-automation/napalm-panos/badge.svg?branch=develop)](https://coveralls.io/github/napalm-automation/napalm-panos?branch=develop)
 
 # napalm-panos
+
+[List of getters supported](docs/supported_getters.md).
