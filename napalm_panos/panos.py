@@ -448,6 +448,35 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
         return list(interface_set)
 
+    def get_arp_table(self, vrf=""):
+        """Return ARP Table details."""
+        if vrf:
+            raise NotImplementedError("`vrf` option not supported by vendor.")
+        arps = []
+
+        cmd = "<show><arp><entry name = 'all'/></arp></show>"
+        try:
+            self.device.op(cmd=cmd)
+            arp_table_xml = xmltodict.parse(self.device.xml_root())
+            arp_table_json = json.dumps(arp_table_xml["response"]["result"]["entries"]["entry"])
+            arp_table = json.loads(arp_table_json)
+        except AttributeError:
+            arp_table = []
+
+        if isinstance(arp_table, dict):
+            # If only 1 interface is listed, xmltodict returns a dictionary, otherwise
+            # it returns a list of dictionaries.
+            arp_table = [arp_table]
+
+        for arp_item in arp_table:
+            entry = {}
+            entry["interface"] = arp_item["interface"]
+            entry["mac"] = arp_item["mac"]
+            entry["ip"] = arp_item["ip"]
+            entry["age"] = float(arp_item["ttl"])
+            arps.append(entry)
+        return arps
+
     def get_facts(self):
         """PANOS version of `get_facts` method, see NAPALM for documentation."""
         facts = {}

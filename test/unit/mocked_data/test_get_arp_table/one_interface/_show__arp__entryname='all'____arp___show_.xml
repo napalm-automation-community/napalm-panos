@@ -1,0 +1,16 @@
+<response status="success"><result>
+  <max>2500</max>
+  <total>2</total>
+  <timeout>1800</timeout>
+  <dp>dp0</dp>
+  <entries>
+    <entry>
+      <status>  c  </status>
+      <ip>10.125.100.1</ip>
+      <mac>02:bc:43:b6:4f:66</mac>
+      <ttl>1770</ttl>
+      <interface>ethernet1/1</interface>
+      <port>ethernet1/1</port>
+    </entry>
+  </entries>
+</result></response>

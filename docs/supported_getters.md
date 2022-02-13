@@ -4,7 +4,7 @@ This table identifies the currently available getters and the support for each:
 
 | Getter                    | Supported |
 | ------------------------- | --------- |
-| get_arp_table             | ❌        |
+| get_arp_table             | ✅        |
 | get_bgp_config            | ❌        |
 | get_bgp_neighbors         | ❌        |
 | get_bgp_neighbors_detail  | ❌        |
