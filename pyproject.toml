@@ -94,6 +94,7 @@ disable = """,
     line-too-long,
     bad-continuation,
     consider-iterating-dictionary,
+    too-many-statements,
     """
 
 [tool.pylint.miscellaneous]
