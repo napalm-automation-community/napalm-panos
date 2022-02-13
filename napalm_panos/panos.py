@@ -518,7 +518,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
         return routes
 
-    def get_interfaces(self):
+    def get_interfaces(self):  # pylint: disable=too-many-locals
         """PANOS version of `get_interfaces` method, see NAPALM for documentation."""
         subif_defaults = {
             "is_up": True,
@@ -527,11 +527,27 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             "last_flapped": -1.0,
             "mac_address": "",
             "mtu": 0,
-            "description": "N/A",
+            "description": "",
         }
         interface_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)|(vlan\.)")
         interface_dict = {}
+        interface_descr = {}
         interface_list = self._extract_interface_list()
+
+        config = xml.etree.ElementTree.fromstring(self.get_config()["running"])  # nosec
+        for eth_int in config.findall(".//ethernet/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ""
+            interface_descr[name] = description.strip()
+        for eth_int in config.findall(".//vlan/units/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ""
+            interface_descr[name] = description.strip()
+        for eth_int in config.findall(".//tunnel/units/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ""
+            interface_descr[name] = description.strip()
+        interface_descr["loopback"] = config.findtext(".//loopback/comment") or ""
 
         for intf in interface_list:
             interface = {}
@@ -569,7 +585,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             else:
                 interface["speed"] = int(interface["speed"])
             interface["mac_address"] = standardize_mac(interface_info.get("mac"))
-            interface["description"] = "N/A"
+            interface["description"] = interface_descr.get(intf, "")
             interface_dict[intf] = interface
 
         return interface_dict
