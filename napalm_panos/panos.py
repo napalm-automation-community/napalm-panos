@@ -687,7 +687,11 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             if interface["speed"] in ("[n/a]", "unknown"):
                 interface["speed"] = 0
             else:
-                interface["speed"] = int(interface["speed"])
+                try:
+                    interface["speed"] = int(interface["speed"])
+                except ValueError:
+                    # Handle when unable to convert a string to an integer, set it to 0 similar to the unknown state.
+                    interface["speed"] = 0
             interface["mac_address"] = standardize_mac(interface_info.get("mac"))
             interface["description"] = interface_descr.get(intf, "")
             interface_dict[intf] = interface
