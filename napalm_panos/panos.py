@@ -16,6 +16,7 @@
 
 # std libs
 import json
+import logging
 import os.path
 import re
 import time
@@ -24,8 +25,10 @@ from datetime import datetime
 
 from napalm.base import NetworkDriver
 from napalm.base.exceptions import ConnectionException
+from napalm.base.exceptions import LockError
 from napalm.base.exceptions import MergeConfigException
 from napalm.base.exceptions import ReplaceConfigException
+from napalm.base.exceptions import UnlockError
 from napalm.base.helpers import mac as standardize_mac
 from napalm.base.utils.string_parsers import convert_uptime_string_seconds
 
@@ -45,8 +48,10 @@ from urllib3.exceptions import InsecureRequestWarning
 
 import xmltodict
 
-
-# local modules
+LOGGER = logging.getLogger(__name__)
+LOCK_TYPES = ("config", "commit")
+TAKE_LOCK_API_CMD = """<request><{0}-lock><add><comment>NAPALM-managed-lock</comment></add></{0}-lock></request>"""
+RELEASE_LOCK_API_CMD = "<request><{0}-lock><remove></remove></{0}-lock></request>"
 
 
 class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attributes
@@ -68,10 +73,12 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         self.merge_config = False
         self.backup_file = None
         self.platform = "panos"
+        self.locked = False
 
         if optional_args is None:
             optional_args = {}
         self.verify = optional_args.get("ssl_verify", False)
+        self.session_config_lock = optional_args.get("config_lock", False)
 
         netmiko_argument_map = {
             "port": None,
@@ -112,6 +119,8 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
                 )
         except ConnectionException as exc:
             raise ConnectionException(str(exc))
+        if not self.locked and self.session_config_lock:
+            self._lock()
 
     def _open_ssh(self):
         try:
@@ -129,11 +138,61 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
     def close(self):
         """PANOS version of `close` method, see NAPALM for documentation."""
+        if self.locked and self.session_config_lock:
+            self._unlock()
         self.device = None
         if self.ssh_connection:
             self.ssh_device.disconnect()
             self.ssh_connection = False
             self.ssh_device = None
+
+    def _lock(self):
+        """Take lock for config editing and committing new configurations."""
+        if self.locked:
+            LOGGER.debug("Config and commit already locked - skipping")
+            return
+
+        for lock_type in LOCK_TYPES:
+            cmd = TAKE_LOCK_API_CMD.format(lock_type)
+            try:
+                self.device.op(cmd=cmd)
+            except pan.xapi.PanXapiError as exc:
+                # In case there was any error - also if there already existed some lock,
+                # created by our current user - abort the operation. User must manually try
+                # again. If for some reason there is a lock that was left by this program
+                # but was not removed due to a crash for example, the lock should be manually
+                # removed for example by using CLI.
+                raise LockError(f"Failed to aquire {lock_type}-lock: {str(exc)}")
+            LOGGER.debug("%s-lock acquired", lock_type)
+        self.locked = True
+
+    def _unlock(self):
+        """Release lock for config editing and committing new configurations."""
+        if self.locked is False:
+            LOGGER.debug("Config and commit was not locked - skipping release")
+            return
+
+        for lock_type in LOCK_TYPES:
+            cmd = RELEASE_LOCK_API_CMD.format(lock_type)
+            try:
+                self.device.op(cmd=cmd)
+            except pan.xapi.PanXapiError as exc:
+                # In case there was any error - also if the lock no longer existed - abort the
+                # operation. If lock was removed by someone else, it implies the conf files
+                # may have changed in the middle of whatever was being done during the lock this
+                # program took.
+                #
+                # Note: There is a possible edge-case that is not currently handled: Someone
+                # removed the lock (possibly made changes and committed them) and then created a
+                # new lock, so the lock being removed now is not the one we created. Then its possible
+                # that for example when different conf formats are being saved, one of the formats has
+                # different data than the others. This case is considered to be too rare for now.
+                # If it becomes an issue, it would be possible to inspect the comment of the lock, to
+                # determine if it was left by this program or by someone manually (who hopefully left
+                # a differing comment). Still not 100% proof, but makes success more likely.
+                raise UnlockError(f"Failed to release {lock_type}-lock: {str(exc)}")
+            LOGGER.debug("%s-lock released", lock_type)
+        self.locked = False
 
     def _import_file(self, filename):
         if not self.api_key:
@@ -145,7 +204,6 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
         path = os.path.basename(filename)
 
-        # TODO: Disabling pylint consider-using-with is not correct, need to figure out proper solution
         mef = requests_toolbelt.MultipartEncoder(
             fields={
                 "file": (path, open(filename, "rb"), "application/octet-stream")  # pylint: disable=consider-using-with
@@ -167,8 +225,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         response = xml.etree.ElementTree.fromstring(request.content)  # nosec
 
         if response.attrib["status"] == "error":
-            # Log request.content here when logging is added. One known use case is
-            # using reserved config filename, such as running-config.xml
+            LOGGER.error("Error found in response: %s", request.content)
             return False
         return path
 
@@ -320,6 +377,11 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             time.sleep(3)
             self.loaded = False
             self.changed = True
+            if self.session_config_lock:
+                # PANOS device releases locks automatically upon commit. Take lock again, and let
+                # it be explicitly released by the driver when the driver is being closed.
+                self.locked = False  # Allow lock to be taken again.
+                self._lock()
         except:  # noqa
             if self.merge_config:
                 raise MergeConfigException("Error while commiting config")
@@ -362,6 +424,10 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
         interface_set = set()
 
+        # Interfaces on an empty VM may have a empty list if no interfaces are defined.
+        if interfaces is None:
+            return []
+
         for entry in interfaces.values():
             for entry_contents in entry.values():
                 if isinstance(entry_contents, dict):
@@ -372,6 +438,35 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
                     interface_set.add(intf["name"])
 
         return list(interface_set)
+
+    def get_arp_table(self, vrf=""):
+        """Return ARP Table details."""
+        if vrf:
+            raise NotImplementedError("`vrf` option not supported by vendor.")
+        arps = []
+
+        cmd = "<show><arp><entry name = 'all'/></arp></show>"
+        try:
+            self.device.op(cmd=cmd)
+            arp_table_xml = xmltodict.parse(self.device.xml_root())
+            arp_table_json = json.dumps(arp_table_xml["response"]["result"]["entries"]["entry"])
+            arp_table = json.loads(arp_table_json)
+        except AttributeError:
+            arp_table = []
+
+        if isinstance(arp_table, dict):
+            # If only 1 interface is listed, xmltodict returns a dictionary, otherwise
+            # it returns a list of dictionaries.
+            arp_table = [arp_table]
+
+        for arp_item in arp_table:
+            entry = {}
+            entry["interface"] = arp_item["interface"]
+            entry["mac"] = arp_item["mac"]
+            entry["ip"] = arp_item["ip"]
+            entry["age"] = float(arp_item["ttl"])
+            arps.append(entry)
+        return arps
 
     def get_facts(self):
         """PANOS version of `get_facts` method, see NAPALM for documentation."""
@@ -518,7 +613,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
         return routes
 
-    def get_interfaces(self):
+    def get_interfaces(self):  # pylint: disable=too-many-locals
         """PANOS version of `get_interfaces` method, see NAPALM for documentation."""
         subif_defaults = {
             "is_up": True,
@@ -527,11 +622,27 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             "last_flapped": -1.0,
             "mac_address": "",
             "mtu": 0,
-            "description": "N/A",
+            "description": "",
         }
         interface_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)|(vlan\.)")
         interface_dict = {}
+        interface_descr = {}
         interface_list = self._extract_interface_list()
+
+        config = xml.etree.ElementTree.fromstring(self.get_config()["running"])  # nosec
+        for eth_int in config.findall(".//ethernet/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ""
+            interface_descr[name] = description.strip()
+        for eth_int in config.findall(".//vlan/units/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ""
+            interface_descr[name] = description.strip()
+        for eth_int in config.findall(".//tunnel/units/entry"):
+            name = eth_int.attrib["name"]
+            description = eth_int.findtext(".//comment") or ""
+            interface_descr[name] = description.strip()
+        interface_descr["loopback"] = config.findtext(".//loopback/comment") or ""
 
         for intf in interface_list:
             interface = {}
@@ -567,9 +678,13 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             if interface["speed"] in ("[n/a]", "unknown"):
                 interface["speed"] = 0
             else:
-                interface["speed"] = int(interface["speed"])
+                try:
+                    interface["speed"] = int(interface["speed"])
+                except ValueError:
+                    # Handle when unable to convert a string to an integer, set it to 0 similar to the unknown state.
+                    interface["speed"] = 0
             interface["mac_address"] = standardize_mac(interface_info.get("mac"))
-            interface["description"] = "N/A"
+            interface["description"] = interface_descr.get(intf, "")
             interface_dict[intf] = interface
 
         return interface_dict
