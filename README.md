@@ -27,7 +27,7 @@ Configuration Lock is also supported, but the `optional_args` `config_lock` key 
 ```python
 from napalm import get_network_driver
 
-panos_device = "device"
+panos_device = "nyc-sw01"
 panos_user = "admin"
 panos_password = "pass123"
 driver = get_network_driver("panos")
