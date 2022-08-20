@@ -624,7 +624,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             "mtu": 0,
             "description": "",
         }
-        interface_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)|(vlan\.)")
+        interface_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)|(vlan\.)|(sdwan\.)")
         interface_dict = {}
         interface_descr = {}
         interface_list = self._extract_interface_list()
