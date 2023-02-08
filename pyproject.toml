@@ -28,7 +28,7 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.6"
-cryptography = "3.3.2"
+cryptography = "39.0.1"
 napalm = "^3.0"
 lxml = "4.6.5"
 pan-python = "*"
