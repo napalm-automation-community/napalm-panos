@@ -484,7 +484,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         if system_info:
             facts["hostname"] = system_info["hostname"]
             facts["vendor"] = "Palo Alto Networks"
-            facts["uptime"] = int(convert_uptime_string_seconds(system_info["uptime"]))
+            facts["uptime"] = float(convert_uptime_string_seconds(system_info["uptime"]))
             facts["os_version"] = system_info["sw-version"]
             facts["serial_number"] = system_info["serial"]
             facts["model"] = system_info["model"]
@@ -619,7 +619,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         subif_defaults = {
             "is_up": True,
             "is_enabled": True,
-            "speed": 0,
+            "speed": 0.0,
             "last_flapped": -1.0,
             "mac_address": "",
             "mtu": 0,
@@ -679,13 +679,13 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             interface["speed"] = interface_info.get("speed")
             # Loopback and down interfaces
             if interface["speed"] in ("[n/a]", "unknown"):
-                interface["speed"] = 0
+                interface["speed"] = 0.0
             else:
                 try:
-                    interface["speed"] = int(interface["speed"])
+                    interface["speed"] = float(interface["speed"])
                 except ValueError:
-                    # Handle when unable to convert a string to an integer, set it to 0 similar to the unknown state.
-                    interface["speed"] = 0
+                    # Handle when unable to convert a string to an float, set it to 0 similar to the unknown state.
+                    interface["speed"] = 0.0
             interface["mac_address"] = standardize_mac(interface_info.get("mac"))
             interface["description"] = interface_descr.get(intf, "")
             interface_dict[intf] = interface
