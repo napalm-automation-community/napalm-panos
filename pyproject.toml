@@ -27,12 +27,12 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.8,<4.0"
 cryptography = "3.3.2"
-napalm = "^3.0"
+napalm = "4.1.0"
 lxml = "4.6.5"
 pan-python = "*"
-netmiko = "^3.3.2"
+netmiko = "4.3.0"
 requests-toolbelt = "*"
 xmltodict = "*"
 
