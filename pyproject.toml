@@ -30,7 +30,7 @@ include = [
 python = ">=3.8,<4.0"
 cryptography = "3.3.2"
 napalm = "4.1.0"
-lxml = "4.6.5"
+lxml = "5.2.1"
 pan-python = "*"
 netmiko = "4.3.0"
 requests-toolbelt = "*"
