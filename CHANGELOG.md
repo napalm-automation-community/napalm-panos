@@ -5,7 +5,7 @@
 - #105 Include interface description for get_interfaces method
 
 
-## Fixed
+### Fixed
 - #115 Update package dependencies, fix tests
 
 # 0.6.0 - 2022-02
