@@ -28,10 +28,10 @@ include = [
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 cryptography = "3.3.2"
-napalm = "4.1.0"
-lxml = "5.2.1"
+napalm = "^4.0.0"
+lxml = "^5.0.0"
 pan-python = "*"
-netmiko = "4.3.0"
+netmiko = "^4.0.0"
 requests-toolbelt = "*"
 xmltodict = "*"
 
