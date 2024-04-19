@@ -1,4 +1,5 @@
 """Basic test for version check."""
+
 import os
 import unittest
 
