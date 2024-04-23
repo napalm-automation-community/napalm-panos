@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "napalm_panos"
-version = "0.6.0"
+version = "0.6.1"
 description = "Network Automation and Programmability Abstraction Layer with Multivendor support for PANOS."
 authors = ["Gabriele Gerbino <gabriele@networktocode.com>"]
 license = "Apache-2.0"
@@ -13,11 +13,10 @@ classifiers = [
     "Intended Audience :: Developers",
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 include = [
     "CHANGELOG.md",
@@ -27,23 +26,22 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.8,<3.12"
 cryptography = "3.3.2"
-napalm = "^3.0"
-lxml = "4.6.5"
+napalm = "^4.0.0"
+lxml = "^5.0.0"
 pan-python = "*"
-netmiko = "^3.3.2"
+netmiko = "^4.0.0"
 requests-toolbelt = "*"
 xmltodict = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 bandit = "*"
-black = {version="^21.10b0", python="^3.6.2"}
 coverage = "*"
 invoke = "*"
 flake8 = "*"
-pylint = {version="2.12.2", python="^3.6.2"}
+pylint = "*"
 pytest = "*"
 pyyaml = "*"
 pydocstyle = "*"
@@ -58,10 +56,12 @@ pytest-json = "*"
 pytest-pythonpath = "*"
 pylama = "*"
 flake8-import-order = "*"
+black = "*"
+
 
 [tool.black]
 line-length = 120
-target-version = ['py37']
+target-version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
 exclude = '''
 (
@@ -92,7 +92,6 @@ good-names="i,ip,j,k,ex,Run,_"
 # Pylint and Black disagree about how to format multi-line arrays; Black wins.
 disable = """,
     line-too-long,
-    bad-continuation,
     consider-iterating-dictionary,
     too-many-statements,
     """
@@ -105,9 +104,10 @@ notes = """,
     """
 
 [tool.pytest.ini_options]
-python_paths = "./"
+pythonpaths = "./"
 testpaths = "tests/"
 addopts = "-vv --doctest-modules -p no:warnings --ignore-glob='*mock*'"
+
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

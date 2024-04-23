@@ -1,7 +1,7 @@
 """Tests for getters."""
 
+from napalm.base import models
 from napalm.base.test import helpers
-from napalm.base.test import models
 from napalm.base.test.getters import BaseTestGetters
 from napalm.base.test.getters import wrap_test_cases
 
@@ -26,6 +26,6 @@ class TestGetter(BaseTestGetters):
             # for interface, interface_data in get_interfaces.items():
             #     assert helpers.test_model(InterfaceDict, interface_data)
         for interface, interface_data in get_interfaces.items():
-            assert helpers.test_model(models.interface, interface_data)
+            assert helpers.test_model(models.InterfaceDict, interface_data)
 
         return get_interfaces

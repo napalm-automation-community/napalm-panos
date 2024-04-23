@@ -1,3 +1,13 @@
+# 0.6.1 - 2024-04
+
+### Added
+- #108 Added Support for sdwan interfaces
+- #105 Include interface description for get_interfaces method
+
+
+### Fixed
+- #115 Update package dependencies, fix tests
+
 # 0.6.0 - 2022-02
 
 ### Added
