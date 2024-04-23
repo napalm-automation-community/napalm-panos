@@ -1,4 +1,5 @@
 """Napalm-panos."""
+
 # pylint: disable=abstract-method,raise-missing-from
 # Copyright 2016 Dravetech AB. All rights reserved.
 #
@@ -219,6 +220,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             params=params,
             headers={"Content-Type": mef.content_type},
             data=mef,
+            timeout=5,
         )
         # if something goes wrong just raise an exception
         request.raise_for_status()
@@ -265,7 +267,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             raise ReplaceConfigException(f"Error while loading config from {path}")
         self.loaded = True
 
-    def _get_file_content(self, filename):  # pylint: disable=no-self-use
+    def _get_file_content(self, filename):
         """Convenience method to get file content."""
         try:
             with open(filename, "r", encoding="utf-8") as file:
@@ -278,7 +280,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         """Netmiko is being used to push set commands."""
         if self.loaded is False:
             if self._save_backup() is False:
-                raise MergeConfigException("Error while storing backup " "config.")
+                raise MergeConfigException("Error while storing backup config.")
         if self.ssh_connection is False:
             self._open_ssh()
 
@@ -343,7 +345,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             self._send_merge_commands(config, file_config)
 
         else:
-            raise MergeConfigException("You must provide either a file " "or a set-format string")
+            raise MergeConfigException("You must provide either a file or a set-format string")
 
     def compare_config(self):
         """Netmiko is being used to obtain config diffs because pan-python doesn't support the needed command."""
@@ -414,7 +416,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
                 self.changed = False
                 self.merge_config = False
             except Exception:  # noqa pylint: disable=broad-except
-                ReplaceConfigException("Error while loading backup config")
+                raise ReplaceConfigException("Error while loading backup config")
 
     def _extract_interface_list(self):
         self.device.op(cmd="<show><interface>all</interface></show>")
@@ -483,7 +485,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         if system_info:
             facts["hostname"] = system_info["hostname"]
             facts["vendor"] = "Palo Alto Networks"
-            facts["uptime"] = int(convert_uptime_string_seconds(system_info["uptime"]))
+            facts["uptime"] = float(convert_uptime_string_seconds(system_info["uptime"]))
             facts["os_version"] = system_info["sw-version"]
             facts["serial_number"] = system_info["serial"]
             facts["model"] = system_info["model"]
@@ -618,13 +620,15 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         subif_defaults = {
             "is_up": True,
             "is_enabled": True,
-            "speed": 0,
+            "speed": 0.0,
             "last_flapped": -1.0,
             "mac_address": "",
             "mtu": 0,
             "description": "",
         }
-        interface_pattern = re.compile(r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)|(vlan\.)")
+        interface_pattern = re.compile(
+            r"(ethernet\d+/\d+\.\d+)|(ae\d+\.\d+)|(loopback\.)|(tunnel\.)|(vlan\.)|(sdwan\.)"
+        )
         interface_dict = {}
         interface_descr = {}
         interface_list = self._extract_interface_list()
@@ -676,13 +680,13 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             interface["speed"] = interface_info.get("speed")
             # Loopback and down interfaces
             if interface["speed"] in ("[n/a]", "unknown"):
-                interface["speed"] = 0
+                interface["speed"] = 0.0
             else:
                 try:
-                    interface["speed"] = int(interface["speed"])
+                    interface["speed"] = float(interface["speed"])
                 except ValueError:
-                    # Handle when unable to convert a string to an integer, set it to 0 similar to the unknown state.
-                    interface["speed"] = 0
+                    # Handle when unable to convert a string to an float, set it to 0 similar to the unknown state.
+                    interface["speed"] = 0.0
             interface["mac_address"] = standardize_mac(interface_info.get("mac"))
             interface["description"] = interface_descr.get(intf, "")
             interface_dict[intf] = interface

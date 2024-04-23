@@ -11,7 +11,7 @@ This is community version of [NAPALM](https://napalm.readthedocs.io/) for the Pa
 
 This table identifies the currently available configuration methods supported:
 
-| Getter                    | Supported |
+| Feature                   | Supported |
 | ------------------------- | --------- |
 | Config Replace            | ✅        |
 | Commit Confirm            | ❌        |
@@ -24,10 +24,10 @@ This table identifies the currently available configuration methods supported:
 
 Configuration Lock is also supported, but the `optional_args` `config_lock` key set to `True`. You can see in this example.
 
-```
+```python
 from napalm import get_network_driver
 
-panos_device = device"
+panos_device = "nyc-sw01"
 panos_user = "admin"
 panos_password = "pass123"
 driver = get_network_driver("panos")
@@ -36,6 +36,7 @@ optional_args = {"config_lock": True}
 with driver(panos_device, panos_user, panos_password, optional_args=optional_args) as device:
     device.load_replace_candidate(filename="2022-01-01-intended-config.xml")
     device.commit_config()
+
 ```
 
 As shown in the example above, the use of NAPALM's context manager is supported and recommended to use. 
