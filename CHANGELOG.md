@@ -1,12 +1,18 @@
+# 0.6.2 - 2024-04
+
+### Fixed
+- #118 Remove cryptography pinned dependency.
+
+
 # 0.6.1 - 2024-04
 
 ### Added
 - #108 Added Support for sdwan interfaces
 - #105 Include interface description for get_interfaces method
 
-
 ### Fixed
 - #115 Update package dependencies, fix tests
+
 
 # 0.6.0 - 2022-02
 
@@ -19,6 +25,7 @@
 ## Fixed
 - #101 Handles unable to convert to int for edge case with interfaces
 - #103 Fix Empty List of Interfaces
+
 
 ## 0.5.4 - 2022-02
 

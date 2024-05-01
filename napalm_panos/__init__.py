@@ -14,9 +14,11 @@
 
 """napalm_panos package."""
 
+from importlib import metadata
+
 # Import local modules
 from napalm_panos.panos import PANOSDriver
 
-__version__ = "0.6.1"
+__version__ = metadata.version(__name__)
 
 __all__ = ("PANOSDriver",)
