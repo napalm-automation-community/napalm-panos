@@ -466,7 +466,10 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             entry["interface"] = arp_item["interface"]
             entry["mac"] = arp_item["mac"]
             entry["ip"] = arp_item["ip"]
-            entry["age"] = float(arp_item["ttl"])
+            try:
+                entry["age"] = float(arp_item["ttl"])
+            except ValueError:
+                entry["age"] = arp_item["ttl"]
             arps.append(entry)
         return arps
 
