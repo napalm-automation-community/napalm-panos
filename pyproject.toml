@@ -30,9 +30,11 @@ python = ">=3.10,<3.14"
 napalm = "^5.0.0"
 lxml = "^5.0.0"
 pan-python = "*"
-netmiko = "^4.0.0"
+netmiko = "^4.4.0"
 requests-toolbelt = "*"
 xmltodict = "*"
+cryptography = ">=42.0.0"
+cffi = ">=1.17.1"
 
 
 [tool.poetry.group.dev.dependencies]

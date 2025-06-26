@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libxslt1-dev \
     zlib1g-dev \
+    build-essential \
+    cargo \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip \
