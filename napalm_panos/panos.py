@@ -469,7 +469,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             try:
                 entry["age"] = float(arp_item["ttl"])
             except ValueError:
-                entry["age"] = arp_item["ttl"]
+                entry["age"] = float(-1)
             arps.append(entry)
         return arps
 
