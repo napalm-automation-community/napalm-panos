@@ -60,7 +60,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
     def __init__(
         self, hostname, username, password, timeout=60, optional_args=None
-    ):  # pylint: disable=too-many-arguments,super-init-not-called
+    ):  # pylint: disable=too-many-arguments,super-init-not-called,too-many-positional-arguments
         """Initialize the methods."""
         self.hostname = hostname
         self.username = username
