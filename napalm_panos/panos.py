@@ -24,7 +24,7 @@ import time
 import xml.etree
 from datetime import datetime
 
-from napalm.base import NetworkDriver
+from napalm.base import NetworkDriver, models
 from napalm.base.exceptions import ConnectionException
 from napalm.base.exceptions import LockError
 from napalm.base.exceptions import MergeConfigException
@@ -60,7 +60,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
 
     def __init__(
         self, hostname, username, password, timeout=60, optional_args=None
-    ):  # pylint: disable=too-many-arguments,super-init-not-called
+    ):  # pylint: disable=too-many-arguments,super-init-not-called,too-many-positional-arguments
         """Initialize the methods."""
         self.hostname = hostname
         self.username = username
@@ -307,7 +307,13 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
         running = str(self.device.xml_root())
         return running
 
-    def get_config(self, retrieve="all", full=False, sanitized=False):
+    def get_config(
+        self,
+        retrieve: str = "all",
+        full: bool = False,
+        sanitized: bool = False,
+        format: str = "text",  # pylint: disable=redefined-builtin
+    ) -> models.ConfigDict:
         """Full and Sanitized is not supported, need to apply to pass tests. It is not clear to me if this construct exists in panos."""
         if full:
             raise NotImplementedError("Full config is not implemented for this platform")
