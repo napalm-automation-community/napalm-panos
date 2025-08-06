@@ -89,6 +89,7 @@ def build(context, nocache=False, forcerm=False, hide=False):  # pylint: disable
     if forcerm:
         command += " --force-rm"
 
+    print(f"Running command: {command}")
     result = context.run(command, hide=hide)
     if result.exited != 0:
         print(f"Failed to build image {IMAGE_NAME}:{IMAGE_VER}\nError: {result.stderr}")
