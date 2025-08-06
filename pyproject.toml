@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "napalm_panos"
-version = "0.6.2"
+version = "0.7.0"
 description = "Network Automation and Programmability Abstraction Layer with Multivendor support for PANOS."
 authors = ["Gabriele Gerbino <gabriele@networktocode.com>"]
 license = "Apache-2.0"
@@ -13,10 +13,10 @@ classifiers = [
     "Intended Audience :: Developers",
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 include = [
     "CHANGELOG.md",
@@ -26,20 +26,22 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
-napalm = "^4.0.0"
+python = ">=3.10,<3.14"
+napalm = "^5.0.0"
 lxml = "^5.0.0"
 pan-python = "*"
-netmiko = "^4.0.0"
+netmiko = "^4.4.0"
 requests-toolbelt = "*"
 xmltodict = "*"
+cryptography = ">=42.0.0"
+cffi = ">=1.17.1"
 
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
 coverage = "*"
 invoke = "*"
-flake8 = "*"
+flake8 = ">6.1.0"
 pylint = "*"
 pytest = "*"
 pyyaml = "*"
@@ -60,7 +62,7 @@ black = "*"
 
 [tool.black]
 line-length = 120
-target-version = ['py38', 'py39', 'py310', 'py311']
+target-version = ['py310']
 include = '\.pyi?$'
 exclude = '''
 (

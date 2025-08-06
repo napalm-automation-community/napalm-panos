@@ -1,3 +1,13 @@
+## 0.7.0 - 2025-06
+
+### Fixed
+
+- #124 Fix ARP table handling for non-numeric TTL values
+
+### Updated
+
+- #125 Updated Python support for 3.12 & 3.13, dropped 3.8 & 3.9
+
 # 0.6.2 - 2024-04
 
 ### Fixed
