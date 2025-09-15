@@ -106,6 +106,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             except KeyError:
                 pass
         self.api_key = optional_args.get("api_key", "")
+        self.port = optional_args.get("port")
 
     def open(self):
         """PANOS version of `open` method, see NAPALM for documentation."""
@@ -115,6 +116,7 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             else:
                 self.device = pan.xapi.PanXapi(
                     hostname=self.hostname,
+                    port=self.port,
                     api_username=self.username,
                     api_password=self.password,
                 )
