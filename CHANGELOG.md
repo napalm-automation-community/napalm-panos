@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+- #130 Avoid importing `pkg_resources` when loading the driver.
+
 ## 0.7.0 - 2025-06
 
 ### Fixed

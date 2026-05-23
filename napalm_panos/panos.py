@@ -34,11 +34,8 @@ from napalm.base.helpers import mac as standardize_mac
 from napalm.base.utils.string_parsers import convert_uptime_string_seconds
 
 from netmiko import ConnectHandler
-from netmiko import __version__ as netmiko_version
 
 import pan.xapi
-
-from pkg_resources import parse_version
 
 import requests
 
@@ -91,12 +88,8 @@ class PANOSDriver(NetworkDriver):  # pylint: disable=too-many-instance-attribute
             "alt_host_keys": False,
             "alt_key_file": "",
             "ssh_config_file": None,
+            "allow_agent": False,
         }
-
-        if parse_version(netmiko_version) >= parse_version("2.0.0"):
-            netmiko_argument_map["allow_agent"] = False
-        elif parse_version(netmiko_version) >= parse_version("1.1.0"):
-            netmiko_argument_map["allow_agent"] = False
 
         # Build dict of any optional Netmiko args
         self.netmiko_optional_args = {}
