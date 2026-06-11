@@ -1,3 +1,10 @@
+## 0.7.1 - 2026-06
+
+### Fixed
+
+- #132 Fix package parse issue with newer versions of Python
+- #132 Fix various dependencies an update Python versions
+
 ## 0.7.0 - 2025-06
 
 ### Fixed
