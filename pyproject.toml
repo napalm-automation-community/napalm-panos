@@ -29,7 +29,6 @@ include = [
 [tool.poetry.dependencies]
 python = ">=3.10,<3.15"
 napalm = "^5.0.0"
-lxml = "^5.0.0"
 pan-python = "*"
 netmiko = ">=4.4.0"
 requests-toolbelt = "*"
